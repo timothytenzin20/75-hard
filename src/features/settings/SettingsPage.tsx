@@ -140,7 +140,6 @@ export function SettingsPage({ state, settings, onChange }: { state: ActiveChall
           </div>
         </div>
       </section>
-      
       <button
         className="focus-ring flex w-full items-center justify-center gap-3 bg-danger py-5 label-caps text-primary"
         onClick={async () => {
