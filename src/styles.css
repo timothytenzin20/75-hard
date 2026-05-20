@@ -5,8 +5,19 @@
 @tailwind utilities;
 
 :root {
-  color: #e5e2e1;
-  background: #141313;
+  --color-background: 20 19 19;
+  --color-surface: 28 27 27;
+  --color-surface-strong: 42 42 42;
+  --color-surface-muted: 53 52 52;
+  --color-primary: 255 255 255;
+  --color-muted: 196 199 200;
+  --color-outline: 68 71 72;
+  --color-accent: 255 95 31;
+  --color-secondary: 0 122 255;
+  --color-success: 0 255 65;
+  --color-danger: 255 59 48;
+  color: rgb(var(--color-primary));
+  background: rgb(var(--color-background));
   font-family: Inter, system-ui, sans-serif;
 }
 
@@ -18,8 +29,8 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100dvh;
-  background: #141313;
-  color: #e5e2e1;
+  background: rgb(var(--color-background));
+  color: rgb(var(--color-primary));
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -40,12 +51,12 @@ button:disabled {
 }
 
 .focus-ring:focus-visible {
-  outline-color: #ff5f1f;
+  outline-color: rgb(var(--color-accent));
 }
 
 .hard-card {
-  border: 2px solid #ffffff;
-  background: #1c1b1b;
+  border: 2px solid rgb(var(--color-primary));
+  background: rgb(var(--color-surface));
 }
 
 .label-caps {

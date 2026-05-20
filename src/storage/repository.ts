@@ -1,6 +1,7 @@
 import { CHALLENGE_LENGTH, createTaskCompletions } from "../domain/constants";
 import { addDays, currentDayNumber, toDateKey } from "../domain/dates";
-import type { ActiveChallengeState, AppSettings, Challenge, ChallengeAttempt, ChallengeDay, DayRecord, JournalEntry, ProgressPhoto, TaskCompletion, TaskKey } from "../domain/types";
+import { DEFAULT_THEME_ID } from "../domain/themes";
+import type { ActiveChallengeState, AppSettings, Challenge, ChallengeAttempt, ChallengeDay, DayRecord, JournalEntry, ProgressPhoto, TaskCompletion, TaskKey, ThemeId } from "../domain/types";
 import { db } from "./db";
 import { compressImage } from "./images";
 
@@ -12,12 +13,19 @@ function id(prefix: string): string {
 
 export async function getSettings(): Promise<AppSettings> {
   const existing = await db.settings.get("settings");
-  if (existing) return existing;
+  if (existing) {
+    const normalized = { ...existing, theme: existing.theme ?? DEFAULT_THEME_ID };
+    if (!existing.theme) {
+      await db.settings.put({ ...normalized, updatedAt: now() });
+    }
+    return normalized;
+  }
   const timestamp = now();
   const settings: AppSettings = {
     id: "settings",
     onboardingComplete: false,
     localStorageWarningAccepted: false,
+    theme: DEFAULT_THEME_ID,
     createdAt: timestamp,
     updatedAt: timestamp
   };
@@ -28,6 +36,11 @@ export async function getSettings(): Promise<AppSettings> {
 export async function acceptStorageWarning(): Promise<void> {
   const settings = await getSettings();
   await db.settings.put({ ...settings, localStorageWarningAccepted: true, onboardingComplete: true, updatedAt: now() });
+}
+
+export async function updateTheme(theme: ThemeId): Promise<void> {
+  const settings = await getSettings();
+  await db.settings.put({ ...settings, theme, updatedAt: now() });
 }
 
 export async function getActiveChallenge(): Promise<ActiveChallengeState | undefined> {

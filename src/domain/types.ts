@@ -1,5 +1,6 @@
 export type ChallengeStatus = "active" | "completed" | "failed" | "archived";
 export type DayStatus = "not_started" | "in_progress" | "complete" | "missed";
+export type ThemeId = "raw-dark" | "solar-flare" | "deep-eucalyptus" | "cyber-punk" | "raw-concrete" | "dusk-violet";
 
 export type TaskKey =
   | "diet"
@@ -15,6 +16,7 @@ export interface AppSettings {
   id: "settings";
   onboardingComplete: boolean;
   localStorageWarningAccepted: boolean;
+  theme: ThemeId;
   createdAt: string;
   updatedAt: string;
 }

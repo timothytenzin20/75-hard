@@ -9,6 +9,7 @@ import { StatsPage } from "../features/stats/StatsPage";
 import { TimelinePage } from "../features/timeline/TimelinePage";
 import { TodayPage } from "../features/today/TodayPage";
 import type { ActiveChallengeState, AppSettings } from "../domain/types";
+import { applyTheme } from "../domain/themes";
 import { getActiveChallenge, getSettings } from "../storage/repository";
 
 export function App() {
@@ -27,6 +28,10 @@ export function App() {
     void refresh();
   }, []);
 
+  useEffect(() => {
+    applyTheme(settings?.theme);
+  }, [settings?.theme]);
+
   if (loading) {
     return <div className="min-h-dvh grid place-items-center label-caps text-muted">Loading local log</div>;
   }
@@ -44,7 +49,7 @@ export function App() {
         <Route path="/day/:dayNumber" element={<DayDetailPage state={state} onChange={refresh} />} />
         <Route path="/stats" element={<StatsPage state={state} onChange={refresh} />} />
         <Route path="/recap/:dayNumber" element={<RecapPage state={state} />} />
-        <Route path="/settings" element={<SettingsPage state={state} onChange={refresh} />} />
+        <Route path="/settings" element={<SettingsPage state={state} settings={settings} onChange={refresh} />} />
         <Route path="*" element={<MissingRoute />} />
       </Route>
     </Routes>

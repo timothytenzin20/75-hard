@@ -103,15 +103,16 @@ async function drawCard(canvas: HTMLCanvasElement | null, record: DayRecord, str
   if (!canvas) return;
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
-  ctx.fillStyle = "#141313";
+  const colors = getCanvasThemeColors();
+  ctx.fillStyle = colors.background;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.strokeStyle = "#ffffff";
+  ctx.strokeStyle = colors.primary;
   ctx.lineWidth = 8;
   ctx.strokeRect(40, 40, canvas.width - 80, canvas.height - 80);
-  ctx.fillStyle = "#ff5f1f";
+  ctx.fillStyle = colors.accent;
   ctx.font = "700 42px JetBrains Mono, monospace";
   ctx.fillText("IM HARD", 80, 125);
-  ctx.fillStyle = "#ffffff";
+  ctx.fillStyle = colors.primary;
   ctx.font = "800 92px JetBrains Mono, monospace";
   ctx.fillText(`DAY ${record.day.dayNumber}`, 80, 240);
   ctx.font = "700 42px JetBrains Mono, monospace";
@@ -120,7 +121,7 @@ async function drawCard(canvas: HTMLCanvasElement | null, record: DayRecord, str
     try {
       const image = await loadImage(photoUrl);
       drawCoverImage(ctx, image, 710, 105, 250, 250);
-      ctx.strokeStyle = "#ffffff";
+      ctx.strokeStyle = colors.primary;
       ctx.lineWidth = 6;
       ctx.strokeRect(710, 105, 250, 250);
     } catch {
@@ -131,21 +132,33 @@ async function drawCard(canvas: HTMLCanvasElement | null, record: DayRecord, str
   record.tasks.slice(0, 8).forEach((task, index) => {
     const x = index < 4 ? 80 : 560;
     const y = 410 + (index % 4) * 78;
-    ctx.fillStyle = task.completed ? "#00ff41" : "#c4c7c8";
+    ctx.fillStyle = task.completed ? colors.success : colors.muted;
     ctx.fillText(task.completed ? "✓" : "□", x, y);
-    ctx.fillStyle = "#ffffff";
+    ctx.fillStyle = colors.primary;
     ctx.fillText(task.label, x + 48, y);
   });
-  ctx.fillStyle = "#ff5f1f";
+  ctx.fillStyle = colors.accent;
   ctx.font = "800 54px JetBrains Mono, monospace";
   ctx.fillText(`${streak} DAY STREAK`, 80, 820);
-  ctx.fillStyle = "#c4c7c8";
+  ctx.fillStyle = colors.muted;
   ctx.font = "400 32px Inter, sans-serif";
   const quote = record.journal?.text ? record.journal.text.slice(0, 92) : "Private proof, saved locally.";
   ctx.fillText(`"${quote}${record.journal && record.journal.text.length > 92 ? "..." : ""}"`, 80, 895, 920);
-  ctx.fillStyle = "#ffffff";
+  ctx.fillStyle = colors.primary;
   ctx.font = "700 28px JetBrains Mono, monospace";
   ctx.fillText(new Date(record.day.completedAt ?? record.day.updatedAt).toLocaleString(), 80, 990);
+}
+
+function getCanvasThemeColors() {
+  const styles = getComputedStyle(document.documentElement);
+  const color = (token: string) => `rgb(${styles.getPropertyValue(token).trim()})`;
+  return {
+    background: color("--color-background"),
+    primary: color("--color-primary"),
+    muted: color("--color-muted"),
+    accent: color("--color-accent"),
+    success: color("--color-success")
+  };
 }
 
 function loadImage(src: string): Promise<HTMLImageElement> {
