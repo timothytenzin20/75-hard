@@ -1,7 +1,7 @@
 import { CHALLENGE_LENGTH, createTaskCompletions } from "../domain/constants";
 import { addDays, currentDayNumber, toDateKey } from "../domain/dates";
 import { DEFAULT_THEME_ID, getDefaultCustomTheme } from "../domain/themes";
-import type { ActiveChallengeState, AppSettings, Challenge, ChallengeAttempt, ChallengeDay, DayRecord, JournalEntry, ProgressPhoto, TaskCompletion, TaskKey, ThemeColors, ThemeId } from "../domain/types";
+import type { ActiveChallengeState, AppSettings, Challenge, ChallengeAttempt, ChallengeDay, DayRecord, DraftPhoto, JournalEntry, ProgressPhoto, TaskCompletion, TaskKey, ThemeColors, ThemeId } from "../domain/types";
 import { db } from "./db";
 import { compressImage } from "./images";
 
@@ -154,6 +154,39 @@ export async function savePhoto(dayId: string, file: File, options: { preserveDa
   });
 }
 
+export async function saveDraftPhoto(dayId: string, file: File): Promise<DraftPhoto> {
+  const timestamp = now();
+  const existing = await db.draftPhotos.where("challengeDayId").equals(dayId).first();
+  const draft: DraftPhoto = {
+    id: existing?.id ?? id("draft-photo"),
+    challengeDayId: dayId,
+    imageBlob: file,
+    mimeType: file.type || "image/jpeg",
+    createdAt: existing?.createdAt ?? timestamp,
+    updatedAt: timestamp
+  };
+  await db.draftPhotos.put(draft);
+  return draft;
+}
+
+export async function getDraftPhoto(dayId: string): Promise<DraftPhoto | undefined> {
+  return db.draftPhotos.where("challengeDayId").equals(dayId).first();
+}
+
+export async function clearDraftPhoto(dayId: string): Promise<void> {
+  const draft = await getDraftPhoto(dayId);
+  if (draft) await db.draftPhotos.delete(draft.id);
+}
+
+export async function promoteDraftPhoto(dayId: string, options: { preserveDayStatus?: boolean } = {}): Promise<boolean> {
+  const draft = await getDraftPhoto(dayId);
+  if (!draft) return false;
+  const file = new File([draft.imageBlob], `${dayId}-proof.jpg`, { type: draft.mimeType });
+  await savePhoto(dayId, file, options);
+  await db.draftPhotos.delete(draft.id);
+  return true;
+}
+
 export async function saveJournal(dayId: string, input: Omit<JournalEntry, "id" | "challengeDayId" | "createdAt" | "updatedAt">, options: { preserveDayStatus?: boolean } = {}): Promise<void> {
   const timestamp = now();
   const existing = await db.journals.where("challengeDayId").equals(dayId).first();
@@ -183,6 +216,48 @@ export async function setDayCompletionFromRequirements(dayId: string, requiremen
   if (!requirementsMet && day.status === "complete") {
     await db.days.update(dayId, { status: "in_progress", completedAt: undefined, updatedAt: timestamp });
   }
+}
+
+export async function setDayStatusFromRequirements(dayId: string, requirementsMet: boolean): Promise<void> {
+  const day = await db.days.get(dayId);
+  if (!day) return;
+  const challenge = await db.challenges.get(day.challengeId);
+  if (!challenge) return;
+  const timestamp = now();
+  if (requirementsMet) {
+    await db.days.update(dayId, { status: "complete", completedAt: day.completedAt ?? timestamp, updatedAt: timestamp });
+    return;
+  }
+  const todayNumber = currentDayNumber(challenge.startDate);
+  await db.days.update(dayId, {
+    status: day.dayNumber < todayNumber ? "missed" : "in_progress",
+    completedAt: undefined,
+    updatedAt: timestamp
+  });
+}
+
+export async function setChallengeCurrentDay(challengeId: string, currentDay: number): Promise<void> {
+  const challenge = await db.challenges.get(challengeId);
+  if (!challenge) return;
+  const clampedDay = Math.min(Math.max(Math.round(currentDay), 1), CHALLENGE_LENGTH);
+  const startDate = addDays(toDateKey(new Date()), -(clampedDay - 1));
+  const timestamp = now();
+  const days = await db.days.where("challengeId").equals(challengeId).toArray();
+  await db.transaction("rw", db.challenges, db.days, async () => {
+    await db.challenges.update(challengeId, {
+      startDate,
+      endDate: addDays(startDate, CHALLENGE_LENGTH - 1),
+      updatedAt: timestamp
+    });
+    await db.days.bulkPut(
+      days.map((day) => ({
+        ...day,
+        date: addDays(startDate, day.dayNumber - 1),
+        status: day.status === "complete" ? "complete" : day.dayNumber < clampedDay ? "missed" : day.dayNumber === clampedDay ? "in_progress" : "not_started",
+        updatedAt: timestamp
+      }))
+    );
+  });
 }
 
 export async function getStatsInputs(challengeId: string) {

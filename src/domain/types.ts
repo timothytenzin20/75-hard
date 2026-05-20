@@ -78,6 +78,15 @@ export interface ProgressPhoto {
   updatedAt: string;
 }
 
+export interface DraftPhoto {
+  id: string;
+  challengeDayId: string;
+  imageBlob: Blob;
+  mimeType: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface JournalEntry {
   id: string;
   challengeDayId: string;

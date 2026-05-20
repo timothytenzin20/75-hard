@@ -9,7 +9,7 @@ export function AppShell({ state }: { state: ActiveChallengeState }) {
       <header className="fixed inset-x-0 top-0 z-30 border-b-2 border-primary bg-background">
         <div className="mx-auto flex h-14 max-w-lg items-center justify-between px-5">
           <div>
-            <p className="label-caps text-muted">im hard</p>
+            <p className="label-caps text-muted">im (75) hard</p>
             <h1 className="font-mono text-xl font-extrabold uppercase">Day {state.today.day.dayNumber} / 75</h1>
           </div>
           <NavLink aria-label="Settings" className="focus-ring grid h-10 w-10 place-items-center border border-primary" to="/settings">

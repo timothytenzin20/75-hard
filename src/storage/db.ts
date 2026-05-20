@@ -1,5 +1,5 @@
 import Dexie, { type Table } from "dexie";
-import type { AppSettings, Challenge, ChallengeAttempt, ChallengeDay, JournalEntry, ProgressPhoto, TaskCompletion } from "../domain/types";
+import type { AppSettings, Challenge, ChallengeAttempt, ChallengeDay, DraftPhoto, JournalEntry, ProgressPhoto, TaskCompletion } from "../domain/types";
 
 export class ImHardDb extends Dexie {
   settings!: Table<AppSettings, string>;
@@ -7,6 +7,7 @@ export class ImHardDb extends Dexie {
   days!: Table<ChallengeDay, string>;
   tasks!: Table<TaskCompletion, string>;
   photos!: Table<ProgressPhoto, string>;
+  draftPhotos!: Table<DraftPhoto, string>;
   journals!: Table<JournalEntry, string>;
   attempts!: Table<ChallengeAttempt, string>;
 
@@ -20,6 +21,9 @@ export class ImHardDb extends Dexie {
       photos: "id, challengeDayId",
       journals: "id, challengeDayId",
       attempts: "id, challengeId, attemptNumber, status"
+    });
+    this.version(2).stores({
+      draftPhotos: "id, challengeDayId"
     });
   }
 }

@@ -45,6 +45,29 @@ button:disabled {
   cursor: not-allowed;
 }
 
+input[type="color"].square-color-input {
+  width: 48px;
+  height: 40px;
+  border-radius: 0;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+input[type="color"].square-color-input::-webkit-color-swatch-wrapper {
+  padding: 0;
+  border-radius: 0;
+}
+
+input[type="color"].square-color-input::-webkit-color-swatch {
+  border: 0;
+  border-radius: 0;
+}
+
+input[type="color"].square-color-input::-moz-color-swatch {
+  border: 0;
+  border-radius: 0;
+}
+
 .focus-ring {
   outline: 2px solid transparent;
   outline-offset: 2px;

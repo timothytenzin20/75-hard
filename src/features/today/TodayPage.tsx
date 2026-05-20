@@ -4,14 +4,14 @@ import { Link } from "react-router-dom";
 import { TASKS } from "../../domain/constants";
 import { canCompleteDay, completedTaskCount } from "../../domain/metrics";
 import type { ActiveChallengeState, JournalEntry, TaskCompletion } from "../../domain/types";
-import { blobUrl } from "../../storage/images";
-import { completeDay, saveJournal, savePhoto, setDayCompletionFromRequirements, setTask } from "../../storage/repository";
+import { previewImageUrl } from "../../storage/images";
+import { clearDraftPhoto, completeDay, getDraftPhoto, promoteDraftPhoto, saveDraftPhoto, saveJournal, setDayCompletionFromRequirements, setTask } from "../../storage/repository";
 import { RatingControl } from "../../components/common/RatingControl";
 
 export function TodayPage({ state, onChange }: { state: ActiveChallengeState; onChange: () => Promise<void> }) {
   const { today } = state;
   const [savedPhotoUrl, setSavedPhotoUrl] = useState<string>();
-  const [pendingPhotoFile, setPendingPhotoFile] = useState<File>();
+  const [pendingPhotoDraft, setPendingPhotoDraft] = useState(false);
   const [pendingPhotoUrl, setPendingPhotoUrl] = useState<string>();
   const [loadedDayId, setLoadedDayId] = useState(today.day.id);
   const [savedTasks, setSavedTasks] = useState(() => today.tasks);
@@ -25,21 +25,47 @@ export function TodayPage({ state, onChange }: { state: ActiveChallengeState; on
   const completed = today.day.status === "complete";
   const hasUnsavedTasks = !sameTasks(tasks, savedTasks);
   const hasUnsavedJournal = JSON.stringify(journal) !== JSON.stringify(savedJournal);
-  const hasUnsavedPhoto = Boolean(pendingPhotoFile);
+  const hasUnsavedPhoto = pendingPhotoDraft;
   const hasUnsavedChanges = hasUnsavedTasks || hasUnsavedJournal || hasUnsavedPhoto;
   const photoUrl = pendingPhotoUrl ?? savedPhotoUrl;
 
   useEffect(() => {
-    const url = blobUrl(today.photo?.imageBlob);
-    setSavedPhotoUrl(url);
+    let disposed = false;
+    void (async () => {
+      const url = today.photo?.imageBlob ? await previewImageUrl(today.photo.imageBlob) : undefined;
+      if (disposed) {
+        if (url?.startsWith("blob:")) URL.revokeObjectURL(url);
+        return;
+      }
+      setSavedPhotoUrl(url);
+    })();
     return () => {
-      if (url) URL.revokeObjectURL(url);
+      disposed = true;
     };
   }, [today.photo]);
 
   useEffect(() => {
+    let disposed = false;
+    void (async () => {
+      const draft = await getDraftPhoto(today.day.id);
+      if (!draft) return;
+      const url = await previewImageUrl(draft.imageBlob);
+      if (disposed) {
+        if (url.startsWith("blob:")) URL.revokeObjectURL(url);
+        return;
+      }
+      setPendingPhotoDraft(true);
+      setPendingPhotoUrl(url);
+      setTasks((current) => current.map((task) => (task.taskKey === "progressPhoto" ? { ...task, completed: true } : task)));
+    })();
     return () => {
-      if (pendingPhotoUrl) URL.revokeObjectURL(pendingPhotoUrl);
+      disposed = true;
+    };
+  }, [today.day.id]);
+
+  useEffect(() => {
+    return () => {
+      if (pendingPhotoUrl?.startsWith("blob:")) URL.revokeObjectURL(pendingPhotoUrl);
     };
   }, [pendingPhotoUrl]);
 
@@ -51,7 +77,7 @@ export function TodayPage({ state, onChange }: { state: ActiveChallengeState; on
       setTasks(today.tasks);
       setSavedJournal(nextJournal);
       setJournal(nextJournal);
-      setPendingPhotoFile(undefined);
+      setPendingPhotoDraft(false);
       setPendingPhotoUrl(undefined);
       setSaveState("idle");
     }
@@ -68,20 +94,20 @@ export function TodayPage({ state, onChange }: { state: ActiveChallengeState; on
           .map((task) => setTask(today.day.id, task.taskKey, task.completed, { preserveDayStatus: completed }))
       );
     }
-    if (pendingPhotoFile) {
-      await savePhoto(today.day.id, pendingPhotoFile, { preserveDayStatus: completed });
+    if (pendingPhotoDraft) {
+      await promoteDraftPhoto(today.day.id, { preserveDayStatus: completed });
     }
     if (hasUnsavedJournal) {
       await saveJournal(today.day.id, cleanJournal(normalizedJournal), { preserveDayStatus: completed });
     }
-    if (completed && (hasUnsavedTasks || pendingPhotoFile)) {
+    if (completed && (hasUnsavedTasks || pendingPhotoDraft)) {
       await setDayCompletionFromRequirements(today.day.id, canCompleteDay({ ...today, tasks }));
     }
     setSavedTasks(tasks);
     setJournal(normalizedJournal);
     setSavedJournal(normalizedJournal);
     await onChange();
-    setPendingPhotoFile(undefined);
+    setPendingPhotoDraft(false);
     setPendingPhotoUrl(undefined);
     setSaveState("saved");
     window.setTimeout(() => setSaveState("idle"), 1200);
@@ -90,7 +116,8 @@ export function TodayPage({ state, onChange }: { state: ActiveChallengeState; on
   const discardChanges = () => {
     setTasks(savedTasks);
     setJournal(savedJournal);
-    setPendingPhotoFile(undefined);
+    void clearDraftPhoto(today.day.id);
+    setPendingPhotoDraft(false);
     setPendingPhotoUrl(undefined);
     setSaveState("idle");
   };
@@ -138,12 +165,12 @@ export function TodayPage({ state, onChange }: { state: ActiveChallengeState; on
           <label className="focus-ring flex min-h-12 cursor-pointer items-center justify-center gap-2 border-2 border-primary px-3 label-caps text-primary">
             <Camera size={18} />
             Camera
-            <input accept="image/*" capture="environment" className="sr-only" type="file" onChange={(event) => void selectPhoto(event.currentTarget.files?.[0], setPendingPhotoFile, setPendingPhotoUrl, setTasks)} />
+            <input accept="image/*" capture="environment" className="sr-only" type="file" onChange={(event) => void selectPhoto(event.currentTarget.files?.[0], today.day.id, setPendingPhotoDraft, setPendingPhotoUrl, setTasks)} />
           </label>
           <label className="focus-ring flex min-h-12 cursor-pointer items-center justify-center gap-2 border-2 border-primary px-3 label-caps text-primary">
             <Image size={18} />
             Library
-            <input accept="image/*" className="sr-only" type="file" onChange={(event) => void selectPhoto(event.currentTarget.files?.[0], setPendingPhotoFile, setPendingPhotoUrl, setTasks)} />
+            <input accept="image/*" className="sr-only" type="file" onChange={(event) => void selectPhoto(event.currentTarget.files?.[0], today.day.id, setPendingPhotoDraft, setPendingPhotoUrl, setTasks)} />
           </label>
         </div>
         <p className="text-sm text-muted">Photos are stored only on this device.</p>
@@ -237,28 +264,21 @@ function updateTask(taskId: string, completed: boolean, setTasks: Dispatch<SetSt
 
 async function selectPhoto(
   file: File | undefined,
-  setPendingPhotoFile: Dispatch<SetStateAction<File | undefined>>,
+  dayId: string,
+  setPendingPhotoDraft: Dispatch<SetStateAction<boolean>>,
   setPendingPhotoUrl: Dispatch<SetStateAction<string | undefined>>,
   setTasks: Dispatch<SetStateAction<TaskCompletion[]>>,
 ) {
   if (!file) return;
-  setPendingPhotoFile(file);
-  const previewUrl = await fileToDataUrl(file);
+  const draft = await saveDraftPhoto(dayId, file);
+  setPendingPhotoDraft(true);
+  const previewUrl = await previewImageUrl(draft.imageBlob);
   setPendingPhotoUrl((current) => {
-    if (current) URL.revokeObjectURL(current);
+    if (current?.startsWith("blob:")) URL.revokeObjectURL(current);
     return previewUrl;
   });
   const markPhotoComplete = (current: TaskCompletion[]) => current.map((task) => (task.taskKey === "progressPhoto" ? { ...task, completed: true } : task));
   setTasks(markPhotoComplete);
-}
-
-function fileToDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(file);
-  });
 }
 
 function cleanJournal(input: { text: string; moodRating?: number; energyRating?: number; difficultyRating?: number; weight: string }): Omit<JournalEntry, "id" | "challengeDayId" | "createdAt" | "updatedAt"> {

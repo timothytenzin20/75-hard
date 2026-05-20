@@ -24,3 +24,20 @@ export async function compressImage(file: File, thumbnail = false): Promise<Blob
 export function blobUrl(blob?: Blob): string | undefined {
   return blob ? URL.createObjectURL(blob) : undefined;
 }
+
+export function fileToDataUrl(file: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
+
+export async function previewImageUrl(file: Blob): Promise<string> {
+  try {
+    return await fileToDataUrl(file);
+  } catch {
+    return URL.createObjectURL(file);
+  }
+}
