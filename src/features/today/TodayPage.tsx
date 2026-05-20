@@ -1,12 +1,12 @@
 import { Camera, Check, Share2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { TASKS } from "../domain/constants";
-import { canCompleteDay, completedTaskCount } from "../domain/metrics";
-import type { ActiveChallengeState, JournalEntry } from "../domain/types";
-import { blobUrl } from "../storage/images";
-import { completeDay, saveJournal, savePhoto, setTask } from "../storage/repository";
-import { RatingControl } from "../components/RatingControl";
+import { TASKS } from "../../domain/constants";
+import { canCompleteDay, completedTaskCount } from "../../domain/metrics";
+import type { ActiveChallengeState, JournalEntry } from "../../domain/types";
+import { blobUrl } from "../../storage/images";
+import { completeDay, saveJournal, savePhoto, setTask } from "../../storage/repository";
+import { RatingControl } from "../../components/common/RatingControl";
 
 export function TodayPage({ state, onChange }: { state: ActiveChallengeState; onChange: () => Promise<void> }) {
   const { today } = state;
@@ -87,9 +87,9 @@ export function TodayPage({ state, onChange }: { state: ActiveChallengeState; on
           onChange={(event) => setJournal((current) => ({ ...current, text: event.target.value }))}
         />
         <div className="space-y-4">
-          <RatingControl label="Mood" value={journal.moodRating} onChange={(value) => setJournal((current) => ({ ...current, moodRating: value }))} />
-          <RatingControl label="Energy" value={journal.energyRating} onChange={(value) => setJournal((current) => ({ ...current, energyRating: value }))} />
-          <RatingControl label="Difficulty" value={journal.difficultyRating} onChange={(value) => setJournal((current) => ({ ...current, difficultyRating: value }))} />
+          <RatingControl label="Mood" lowLabel="Low" highLabel="Strong" value={journal.moodRating} onChange={(value) => setJournal((current) => ({ ...current, moodRating: value }))} />
+          <RatingControl label="Energy" lowLabel="Drained" highLabel="Charged" value={journal.energyRating} onChange={(value) => setJournal((current) => ({ ...current, energyRating: value }))} />
+          <RatingControl label="Difficulty" lowLabel="Easy" highLabel="Hard" value={journal.difficultyRating} onChange={(value) => setJournal((current) => ({ ...current, difficultyRating: value }))} />
           <input
             className="focus-ring w-full border-b-2 border-primary bg-background py-3 text-primary placeholder:text-muted"
             placeholder="Weight (optional)"

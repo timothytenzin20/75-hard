@@ -1,15 +1,15 @@
 import { useEffect, useState } from "react";
 import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
-import { AppShell } from "./components/AppShell";
-import { DayDetailPage } from "./pages/DayDetailPage";
-import { OnboardingPage } from "./pages/OnboardingPage";
-import { RecapPage } from "./pages/RecapPage";
-import { SettingsPage } from "./pages/SettingsPage";
-import { StatsPage } from "./pages/StatsPage";
-import { TimelinePage } from "./pages/TimelinePage";
-import { TodayPage } from "./pages/TodayPage";
-import type { ActiveChallengeState, AppSettings } from "./domain/types";
-import { getActiveChallenge, getSettings } from "./storage/repository";
+import { AppShell } from "./AppShell";
+import { DayDetailPage } from "../features/day-detail/DayDetailPage";
+import { OnboardingPage } from "../features/onboarding/OnboardingPage";
+import { RecapPage } from "../features/recap/RecapPage";
+import { SettingsPage } from "../features/settings/SettingsPage";
+import { StatsPage } from "../features/stats/StatsPage";
+import { TimelinePage } from "../features/timeline/TimelinePage";
+import { TodayPage } from "../features/today/TodayPage";
+import type { ActiveChallengeState, AppSettings } from "../domain/types";
+import { getActiveChallenge, getSettings } from "../storage/repository";
 
 export function App() {
   const [settings, setSettings] = useState<AppSettings>();

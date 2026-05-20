@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
-import { getDayStatus } from "../domain/metrics";
-import type { ActiveChallengeState } from "../domain/types";
+import { getDayStatus } from "../../domain/metrics";
+import type { ActiveChallengeState } from "../../domain/types";
 
 export function TimelinePage({ state }: { state: ActiveChallengeState }) {
   return (

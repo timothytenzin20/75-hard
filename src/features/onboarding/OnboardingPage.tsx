@@ -1,5 +1,5 @@
 import { ShieldCheck } from "lucide-react";
-import { acceptStorageWarning, startChallenge } from "../storage/repository";
+import { acceptStorageWarning, startChallenge } from "../../storage/repository";
 
 export function OnboardingPage({ onReady }: { onReady: () => Promise<void> }) {
   const handleStart = async () => {

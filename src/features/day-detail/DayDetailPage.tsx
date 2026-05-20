@@ -1,11 +1,11 @@
 import { ArrowLeft, Share2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { formatShortDate } from "../domain/dates";
-import { getDayStatus } from "../domain/metrics";
-import type { ActiveChallengeState, DayRecord } from "../domain/types";
-import { blobUrl } from "../storage/images";
-import { getDayRecord } from "../storage/repository";
+import { formatShortDate } from "../../domain/dates";
+import { getDayStatus } from "../../domain/metrics";
+import type { ActiveChallengeState, DayRecord } from "../../domain/types";
+import { blobUrl } from "../../storage/images";
+import { getDayRecord } from "../../storage/repository";
 
 export function DayDetailPage({ state }: { state: ActiveChallengeState; onChange: () => Promise<void> }) {
   const params = useParams();

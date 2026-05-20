@@ -1,4 +1,16 @@
-export function RatingControl({ label, value, onChange }: { label: string; value?: number; onChange: (value: number | undefined) => void }) {
+export function RatingControl({
+  label,
+  value,
+  lowLabel,
+  highLabel,
+  onChange
+}: {
+  label: string;
+  value?: number;
+  lowLabel?: string;
+  highLabel?: string;
+  onChange: (value: number | undefined) => void;
+}) {
   return (
     <div>
       <div className="mb-2 flex items-center justify-between">
@@ -19,6 +31,13 @@ export function RatingControl({ label, value, onChange }: { label: string; value
           </button>
         ))}
       </div>
+      {(lowLabel || highLabel) ? (
+        <div className="mt-2 grid grid-cols-5 gap-2 text-[11px] leading-4 text-muted">
+          <span className="col-span-2">{lowLabel}</span>
+          <span aria-hidden="true" />
+          <span className="col-span-2 text-right">{highLabel}</span>
+        </div>
+      ) : null}
     </div>
   );
 }

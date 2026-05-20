@@ -1,10 +1,10 @@
 import { ArrowLeft, Copy, Download, Share2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { statsFor } from "../domain/metrics";
-import type { ActiveChallengeState, DayRecord } from "../domain/types";
-import { blobUrl } from "../storage/images";
-import { getDayRecord, getStatsInputs } from "../storage/repository";
+import { statsFor } from "../../domain/metrics";
+import type { ActiveChallengeState, DayRecord } from "../../domain/types";
+import { blobUrl } from "../../storage/images";
+import { getDayRecord, getStatsInputs } from "../../storage/repository";
 
 export function RecapPage({ state }: { state: ActiveChallengeState }) {
   const { dayNumber } = useParams();
@@ -13,6 +13,7 @@ export function RecapPage({ state }: { state: ActiveChallengeState }) {
   const day = state.days.find((item) => item.dayNumber === Number(dayNumber));
   const [record, setRecord] = useState<DayRecord>();
   const [photoUrl, setPhotoUrl] = useState<string>();
+  const [includePhoto, setIncludePhoto] = useState(true);
   const [status, setStatus] = useState("");
   const [streak, setStreak] = useState(0);
 
@@ -33,8 +34,8 @@ export function RecapPage({ state }: { state: ActiveChallengeState }) {
   const recapText = useMemo(() => (record ? buildRecapText(record, streak) : ""), [record, streak]);
 
   useEffect(() => {
-    if (record) void drawCard(canvasRef.current, record, streak);
-  }, [record, streak]);
+    if (record) void drawCard(canvasRef.current, record, streak, includePhoto ? photoUrl : undefined);
+  }, [record, streak, includePhoto, photoUrl]);
 
   if (!day || !record) return <main className="px-5 py-8 label-caps text-muted">Loading recap</main>;
 
@@ -49,8 +50,18 @@ export function RecapPage({ state }: { state: ActiveChallengeState }) {
         <h1 className="font-mono text-4xl font-extrabold uppercase">Day {record.day.dayNumber} complete</h1>
       </section>
       {photoUrl ? <img className="aspect-square w-full border-2 border-primary object-cover" src={photoUrl} alt="Proof preview" /> : null}
+      <button
+        className={`focus-ring flex min-h-14 w-full items-center justify-between border-2 px-4 label-caps ${
+          includePhoto && photoUrl ? "border-orange bg-orange text-background" : "border-primary text-primary"
+        } ${photoUrl ? "" : "opacity-50"}`}
+        type="button"
+        disabled={!photoUrl}
+        onClick={() => setIncludePhoto((current) => !current)}
+      >
+        <span>Include uploaded image</span>
+        <span>{includePhoto && photoUrl ? "On" : "Off"}</span>
+      </button>
       <canvas ref={canvasRef} className="w-full border-2 border-primary bg-background" width={1080} height={1080} />
-      <textarea className="min-h-56 w-full border-2 border-primary bg-background p-4 text-primary" readOnly value={recapText} />
       <div className="grid grid-cols-1 gap-3">
         <button className="focus-ring flex items-center justify-center gap-3 bg-primary py-4 label-caps text-background" onClick={() => void shareImage(canvasRef.current, recapText, setStatus)}>
           <Share2 size={18} />
@@ -88,7 +99,7 @@ function buildRecapText(record: DayRecord, streak: number): string {
   return lines.filter(Boolean).join("\n");
 }
 
-async function drawCard(canvas: HTMLCanvasElement | null, record: DayRecord, streak: number) {
+async function drawCard(canvas: HTMLCanvasElement | null, record: DayRecord, streak: number, photoUrl?: string) {
   if (!canvas) return;
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
@@ -105,6 +116,17 @@ async function drawCard(canvas: HTMLCanvasElement | null, record: DayRecord, str
   ctx.fillText(`DAY ${record.day.dayNumber}`, 80, 240);
   ctx.font = "700 42px JetBrains Mono, monospace";
   ctx.fillText("COMPLETE", 80, 300);
+  if (photoUrl) {
+    try {
+      const image = await loadImage(photoUrl);
+      drawCoverImage(ctx, image, 710, 105, 250, 250);
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 6;
+      ctx.strokeRect(710, 105, 250, 250);
+    } catch {
+      // If the browser cannot decode the local blob, keep the recap usable without the image.
+    }
+  }
   ctx.font = "500 34px Inter, sans-serif";
   record.tasks.slice(0, 8).forEach((task, index) => {
     const x = index < 4 ? 80 : 560;
@@ -124,6 +146,24 @@ async function drawCard(canvas: HTMLCanvasElement | null, record: DayRecord, str
   ctx.fillStyle = "#ffffff";
   ctx.font = "700 28px JetBrains Mono, monospace";
   ctx.fillText(new Date(record.day.completedAt ?? record.day.updatedAt).toLocaleString(), 80, 990);
+}
+
+function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = reject;
+    image.src = src;
+  });
+}
+
+function drawCoverImage(ctx: CanvasRenderingContext2D, image: HTMLImageElement, x: number, y: number, width: number, height: number) {
+  const scale = Math.max(width / image.naturalWidth, height / image.naturalHeight);
+  const sourceWidth = width / scale;
+  const sourceHeight = height / scale;
+  const sourceX = (image.naturalWidth - sourceWidth) / 2;
+  const sourceY = (image.naturalHeight - sourceHeight) / 2;
+  ctx.drawImage(image, sourceX, sourceY, sourceWidth, sourceHeight, x, y, width, height);
 }
 
 async function shareImage(canvas: HTMLCanvasElement | null, text: string, setStatus: (value: string) => void) {

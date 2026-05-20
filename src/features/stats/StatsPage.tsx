@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { MetricBox } from "../components/MetricBox";
-import { statsFor } from "../domain/metrics";
-import type { ActiveChallengeState } from "../domain/types";
-import { getStatsInputs } from "../storage/repository";
+import { MetricBox } from "../../components/common/MetricBox";
+import { statsFor } from "../../domain/metrics";
+import type { ActiveChallengeState } from "../../domain/types";
+import { getStatsInputs } from "../../storage/repository";
 
 type Stats = ReturnType<typeof statsFor>;
 

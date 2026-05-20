@@ -1,7 +1,7 @@
 import { RotateCcw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import type { ActiveChallengeState } from "../domain/types";
-import { restartChallenge } from "../storage/repository";
+import type { ActiveChallengeState } from "../../domain/types";
+import { restartChallenge } from "../../storage/repository";
 
 export function SettingsPage({ state, onChange }: { state: ActiveChallengeState; onChange: () => Promise<void> }) {
   const navigate = useNavigate();
