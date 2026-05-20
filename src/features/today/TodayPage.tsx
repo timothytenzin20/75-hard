@@ -1,4 +1,4 @@
-import { Camera, Check, Share2 } from "lucide-react";
+import { AlertTriangle, Camera, Check, Share2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { TASKS } from "../../domain/constants";
@@ -18,9 +18,12 @@ export function TodayPage({ state, onChange }: { state: ActiveChallengeState; on
     difficultyRating: today.journal?.difficultyRating,
     weight: today.journal?.weight ?? ""
   });
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
+  const savedJournal = useMemo(() => getJournalForm(today.journal), [today.journal]);
   const completeCount = completedTaskCount(today);
   const ready = canCompleteDay(today);
   const completed = today.day.status === "complete";
+  const hasUnsavedJournal = !completed && JSON.stringify(journal) !== JSON.stringify(savedJournal);
 
   useEffect(() => {
     const url = blobUrl(today.photo?.imageBlob);
@@ -30,13 +33,27 @@ export function TodayPage({ state, onChange }: { state: ActiveChallengeState; on
     };
   }, [today.photo]);
 
+  useEffect(() => {
+    setJournal(savedJournal);
+    setSaveState("idle");
+  }, [savedJournal]);
+
   const saveJournalNow = async () => {
+    setSaveState("saving");
     await saveJournal(today.day.id, cleanJournal(journal));
     await onChange();
+    setSaveState("saved");
+    window.setTimeout(() => setSaveState("idle"), 1200);
+  };
+
+  const discardJournalChanges = () => {
+    setJournal(savedJournal);
+    setSaveState("idle");
   };
 
   return (
     <main className="space-y-8 px-5 py-8">
+      {hasUnsavedJournal ? <UnsavedJournalBar onDiscard={discardJournalChanges} onSave={() => void saveJournalNow()} saving={saveState === "saving"} /> : null}
       <section className="hard-card p-5">
         <div className="flex items-end justify-between">
           <div>
@@ -99,8 +116,8 @@ export function TodayPage({ state, onChange }: { state: ActiveChallengeState; on
           />
         </div>
         {!completed ? (
-          <button className="focus-ring w-full border-2 border-primary py-4 label-caps text-primary" onClick={saveJournalNow}>
-            Save journal
+          <button className={`focus-ring w-full border-2 py-4 label-caps transition-colors ${saveButtonClass(saveState, hasUnsavedJournal)}`} onClick={saveJournalNow} disabled={saveState === "saving"}>
+            {saveState === "saving" ? "Saving..." : saveState === "saved" ? "Saved" : hasUnsavedJournal ? "Save journal" : "Journal saved"}
           </button>
         ) : null}
       </section>
@@ -127,6 +144,26 @@ export function TodayPage({ state, onChange }: { state: ActiveChallengeState; on
         {!ready && !completed ? <p className="text-center text-sm text-muted">Complete every checklist item and upload a photo before closing the day.</p> : null}
       </section>
     </main>
+  );
+}
+
+function UnsavedJournalBar({ saving, onDiscard, onSave }: { saving: boolean; onDiscard: () => void; onSave: () => void }) {
+  return (
+    <div className="fixed inset-x-0 top-14 z-40 border-b-2 border-orange bg-background/95 backdrop-blur-sm">
+      <div className="mx-auto flex max-w-lg items-center gap-3 px-5 py-3">
+        <AlertTriangle className="shrink-0 text-orange" size={20} />
+        <div className="min-w-0 flex-1">
+          <p className="label-caps text-primary">Unsaved changes</p>
+          <p className="text-xs text-muted">Save or discard your journal edits.</p>
+        </div>
+        <button className="label-caps text-muted" type="button" onClick={onDiscard}>
+          Discard
+        </button>
+        <button className="bg-orange px-3 py-2 label-caps text-background disabled:opacity-60" type="button" disabled={saving} onClick={onSave}>
+          {saving ? "Saving" : "Save"}
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -157,4 +194,20 @@ function cleanJournal(input: { text: string; moodRating?: number; energyRating?:
     difficultyRating: input.difficultyRating,
     weight: input.weight.trim() || undefined
   };
+}
+
+function getJournalForm(journal?: JournalEntry) {
+  return {
+    text: journal?.text ?? "",
+    moodRating: journal?.moodRating,
+    energyRating: journal?.energyRating,
+    difficultyRating: journal?.difficultyRating,
+    weight: journal?.weight ?? ""
+  };
+}
+
+function saveButtonClass(saveState: "idle" | "saving" | "saved", hasUnsavedJournal: boolean) {
+  if (saveState === "saving") return "border-orange bg-orange text-background";
+  if (saveState === "saved" || !hasUnsavedJournal) return "border-success bg-success text-background";
+  return "border-primary text-primary active:bg-primary active:text-background";
 }

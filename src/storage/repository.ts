@@ -1,6 +1,6 @@
 import { CHALLENGE_LENGTH, createTaskCompletions } from "../domain/constants";
 import { addDays, currentDayNumber, toDateKey } from "../domain/dates";
-import type { ActiveChallengeState, AppSettings, Challenge, ChallengeDay, DayRecord, JournalEntry, ProgressPhoto, TaskKey } from "../domain/types";
+import type { ActiveChallengeState, AppSettings, Challenge, ChallengeAttempt, ChallengeDay, DayRecord, JournalEntry, ProgressPhoto, TaskCompletion, TaskKey } from "../domain/types";
 import { db } from "./db";
 import { compressImage } from "./images";
 
@@ -165,6 +165,91 @@ export async function getStatsInputs(challengeId: string) {
   };
 }
 
+interface ExportedPhoto extends Omit<ProgressPhoto, "imageBlob" | "thumbnailBlob"> {
+  imageDataUrl: string;
+  thumbnailDataUrl?: string;
+}
+
+interface ImHardBackup {
+  app: "im-hard";
+  version: 1;
+  exportedAt: string;
+  data: {
+    settings: AppSettings[];
+    challenges: Challenge[];
+    days: ChallengeDay[];
+    tasks: TaskCompletion[];
+    photos: ExportedPhoto[];
+    journals: JournalEntry[];
+    attempts: ChallengeAttempt[];
+  };
+}
+
+export async function exportBackup(): Promise<Blob> {
+  const [settings, challenges, days, tasks, photos, journals, attempts] = await Promise.all([
+    db.settings.toArray(),
+    db.challenges.toArray(),
+    db.days.toArray(),
+    db.tasks.toArray(),
+    db.photos.toArray(),
+    db.journals.toArray(),
+    db.attempts.toArray()
+  ]);
+  const backup: ImHardBackup = {
+    app: "im-hard",
+    version: 1,
+    exportedAt: now(),
+    data: {
+      settings,
+      challenges,
+      days,
+      tasks,
+      photos: await Promise.all(
+        photos.map(async (photo) => ({
+          id: photo.id,
+          challengeDayId: photo.challengeDayId,
+          mimeType: photo.mimeType,
+          createdAt: photo.createdAt,
+          updatedAt: photo.updatedAt,
+          imageDataUrl: await blobToDataUrl(photo.imageBlob),
+          thumbnailDataUrl: photo.thumbnailBlob ? await blobToDataUrl(photo.thumbnailBlob) : undefined
+        }))
+      ),
+      journals,
+      attempts
+    }
+  };
+  return new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
+}
+
+export async function importBackup(file: File): Promise<void> {
+  const backup = JSON.parse(await file.text()) as ImHardBackup;
+  if (backup.app !== "im-hard" || backup.version !== 1) {
+    throw new Error("This is not a supported im hard backup file.");
+  }
+  const photos: ProgressPhoto[] = await Promise.all(
+    backup.data.photos.map(async (photo) => ({
+      id: photo.id,
+      challengeDayId: photo.challengeDayId,
+      mimeType: photo.mimeType,
+      createdAt: photo.createdAt,
+      updatedAt: photo.updatedAt,
+      imageBlob: dataUrlToBlob(photo.imageDataUrl),
+      thumbnailBlob: photo.thumbnailDataUrl ? dataUrlToBlob(photo.thumbnailDataUrl) : undefined
+    }))
+  );
+  await db.transaction("rw", [db.settings, db.challenges, db.days, db.tasks, db.photos, db.journals, db.attempts], async () => {
+    await Promise.all([db.settings.clear(), db.challenges.clear(), db.days.clear(), db.tasks.clear(), db.photos.clear(), db.journals.clear(), db.attempts.clear()]);
+    await db.settings.bulkPut(backup.data.settings);
+    await db.challenges.bulkPut(backup.data.challenges);
+    await db.days.bulkPut(backup.data.days);
+    await db.tasks.bulkPut(backup.data.tasks);
+    await db.photos.bulkPut(photos);
+    await db.journals.bulkPut(backup.data.journals);
+    await db.attempts.bulkPut(backup.data.attempts);
+  });
+}
+
 async function ensureDaysForChallenge(challenge: Challenge): Promise<void> {
   const existing = await db.days.where("challengeId").equals(challenge.id).count();
   if (existing >= CHALLENGE_LENGTH) return;
@@ -190,4 +275,24 @@ async function markPastIncompleteDays(challenge: Challenge): Promise<void> {
   if (!past.length) return;
   const timestamp = now();
   await db.days.bulkPut(past.map((day) => ({ ...day, status: "missed", updatedAt: timestamp })));
+}
+
+function blobToDataUrl(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(blob);
+  });
+}
+
+function dataUrlToBlob(dataUrl: string): Blob {
+  const [header, base64] = dataUrl.split(",");
+  const mimeType = header.match(/data:(.*);base64/)?.[1] ?? "application/octet-stream";
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+  return new Blob([bytes], { type: mimeType });
 }

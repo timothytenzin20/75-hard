@@ -42,7 +42,7 @@ export function App() {
         <Route path="/today" element={<TodayPage state={state} onChange={refresh} />} />
         <Route path="/timeline" element={<TimelinePage state={state} />} />
         <Route path="/day/:dayNumber" element={<DayDetailPage state={state} onChange={refresh} />} />
-        <Route path="/stats" element={<StatsPage state={state} />} />
+        <Route path="/stats" element={<StatsPage state={state} onChange={refresh} />} />
         <Route path="/recap/:dayNumber" element={<RecapPage state={state} />} />
         <Route path="/settings" element={<SettingsPage state={state} onChange={refresh} />} />
         <Route path="*" element={<MissingRoute />} />
