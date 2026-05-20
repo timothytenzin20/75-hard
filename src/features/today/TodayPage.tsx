@@ -1,85 +1,125 @@
 import { AlertTriangle, Camera, Check, Share2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
 import { Link } from "react-router-dom";
 import { TASKS } from "../../domain/constants";
 import { canCompleteDay, completedTaskCount } from "../../domain/metrics";
-import type { ActiveChallengeState, JournalEntry } from "../../domain/types";
+import type { ActiveChallengeState, JournalEntry, TaskCompletion } from "../../domain/types";
 import { blobUrl } from "../../storage/images";
-import { completeDay, saveJournal, savePhoto, setTask } from "../../storage/repository";
+import { completeDay, saveJournal, savePhoto, setDayCompletionFromRequirements, setTask } from "../../storage/repository";
 import { RatingControl } from "../../components/common/RatingControl";
 
 export function TodayPage({ state, onChange }: { state: ActiveChallengeState; onChange: () => Promise<void> }) {
   const { today } = state;
-  const [photoUrl, setPhotoUrl] = useState<string>();
+  const [savedPhotoUrl, setSavedPhotoUrl] = useState<string>();
+  const [pendingPhotoFile, setPendingPhotoFile] = useState<File>();
+  const [pendingPhotoUrl, setPendingPhotoUrl] = useState<string>();
   const [loadedDayId, setLoadedDayId] = useState(today.day.id);
+  const [savedTasks, setSavedTasks] = useState(() => today.tasks);
+  const [tasks, setTasks] = useState(() => today.tasks);
   const [savedJournal, setSavedJournal] = useState(() => getJournalForm(today.journal));
   const [journal, setJournal] = useState(() => getJournalForm(today.journal));
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
-  const completeCount = completedTaskCount(today);
-  const ready = canCompleteDay(today);
+  const pendingRecord = { ...today, tasks };
+  const completeCount = completedTaskCount(pendingRecord);
+  const ready = canCompleteDay(pendingRecord);
   const completed = today.day.status === "complete";
-  const hasUnsavedJournal = !completed && JSON.stringify(journal) !== JSON.stringify(savedJournal);
+  const hasUnsavedTasks = !sameTasks(tasks, savedTasks);
+  const hasUnsavedJournal = JSON.stringify(journal) !== JSON.stringify(savedJournal);
+  const hasUnsavedPhoto = Boolean(pendingPhotoFile);
+  const hasUnsavedChanges = hasUnsavedTasks || hasUnsavedJournal || hasUnsavedPhoto;
+  const photoUrl = pendingPhotoUrl ?? savedPhotoUrl;
 
   useEffect(() => {
     const url = blobUrl(today.photo?.imageBlob);
-    setPhotoUrl(url);
+    setSavedPhotoUrl(url);
     return () => {
       if (url) URL.revokeObjectURL(url);
     };
   }, [today.photo]);
 
   useEffect(() => {
+    return () => {
+      if (pendingPhotoUrl) URL.revokeObjectURL(pendingPhotoUrl);
+    };
+  }, [pendingPhotoUrl]);
+
+  useEffect(() => {
     if (today.day.id !== loadedDayId) {
       const nextJournal = getJournalForm(today.journal);
       setLoadedDayId(today.day.id);
+      setSavedTasks(today.tasks);
+      setTasks(today.tasks);
       setSavedJournal(nextJournal);
       setJournal(nextJournal);
+      setPendingPhotoFile(undefined);
+      setPendingPhotoUrl(undefined);
       setSaveState("idle");
     }
-  }, [loadedDayId, today.day.id, today.journal]);
+  }, [loadedDayId, today.day.id, today.journal, today.tasks]);
 
-  const saveJournalNow = async () => {
-    if (!hasUnsavedJournal) return;
+  const saveChangesNow = async () => {
+    if (!hasUnsavedChanges) return;
     setSaveState("saving");
     const normalizedJournal = normalizeJournalForm(journal);
-    await saveJournal(today.day.id, cleanJournal(normalizedJournal));
+    if (hasUnsavedTasks) {
+      await Promise.all(
+        tasks
+          .filter((task) => task.completed !== savedTasks.find((savedTask) => savedTask.taskKey === task.taskKey)?.completed)
+          .map((task) => setTask(today.day.id, task.taskKey, task.completed, { preserveDayStatus: completed }))
+      );
+    }
+    if (pendingPhotoFile) {
+      await savePhoto(today.day.id, pendingPhotoFile, { preserveDayStatus: completed });
+    }
+    if (hasUnsavedJournal) {
+      await saveJournal(today.day.id, cleanJournal(normalizedJournal), { preserveDayStatus: completed });
+    }
+    if (completed && (hasUnsavedTasks || pendingPhotoFile)) {
+      await setDayCompletionFromRequirements(today.day.id, canCompleteDay({ ...today, tasks }));
+    }
+    setSavedTasks(tasks);
     setJournal(normalizedJournal);
     setSavedJournal(normalizedJournal);
     await onChange();
+    setPendingPhotoFile(undefined);
+    setPendingPhotoUrl(undefined);
     setSaveState("saved");
     window.setTimeout(() => setSaveState("idle"), 1200);
   };
 
-  const discardJournalChanges = () => {
+  const discardChanges = () => {
+    setTasks(savedTasks);
     setJournal(savedJournal);
+    setPendingPhotoFile(undefined);
+    setPendingPhotoUrl(undefined);
     setSaveState("idle");
   };
 
   return (
     <main className="space-y-8 px-5 py-8">
-      {hasUnsavedJournal ? <UnsavedJournalModal onDiscard={discardJournalChanges} onSave={() => void saveJournalNow()} saving={saveState === "saving"} /> : null}
+      {hasUnsavedChanges ? <UnsavedChangesModal onDiscard={discardChanges} onSave={() => void saveChangesNow()} saving={saveState === "saving"} completed={completed} /> : null}
       <section className="hard-card p-5">
         <div className="flex items-end justify-between">
           <div>
             <p className="label-caps text-muted">Progress</p>
-            <h2 className="font-mono text-4xl font-extrabold">{completeCount} / {today.tasks.length}</h2>
+            <h2 className="font-mono text-4xl font-extrabold">{completeCount} / {tasks.length}</h2>
           </div>
-          <p className="label-caps text-orange">{Math.round((completeCount / today.tasks.length) * 100)}%</p>
+          <p className="label-caps text-orange">{Math.round((completeCount / tasks.length) * 100)}%</p>
         </div>
         <div className="mt-4 h-3 border border-primary">
-          <div className="h-full bg-orange" style={{ width: `${(completeCount / today.tasks.length) * 100}%` }} />
+          <div className="h-full bg-orange" style={{ width: `${(completeCount / tasks.length) * 100}%` }} />
         </div>
       </section>
 
       <section>
         <h2 className="label-caps mb-3 text-muted">Checklist</h2>
         <div className="border-t border-primary">
-          {today.tasks.map((task) => {
+          {tasks.map((task) => {
             const tone = TASKS.find((item) => item.key === task.taskKey)?.tone ?? "green";
             return (
               <label key={task.id} className="flex min-h-16 cursor-pointer items-center justify-between border-b border-primary py-3">
                 <span className={`label-caps pr-4 ${task.completed ? "text-muted line-through" : "text-primary"}`}>{task.label}</span>
-                <input className="sr-only" type="checkbox" checked={task.completed} disabled={completed || task.taskKey === "progressPhoto"} onChange={(event) => void setTask(today.day.id, task.taskKey, event.target.checked).then(onChange)} />
+                <input className="sr-only" type="checkbox" checked={task.completed} disabled={task.taskKey === "progressPhoto"} onChange={(event) => updateTask(task.id, event.target.checked, setTasks)} />
                 <span className={`grid h-8 w-8 place-items-center border-2 border-primary ${task.completed ? toneClass(tone) : ""}`}>
                   {task.completed ? <Check size={18} /> : null}
                 </span>
@@ -93,7 +133,7 @@ export function TodayPage({ state, onChange }: { state: ActiveChallengeState; on
         <h2 className="label-caps text-muted">Daily proof photo</h2>
         <label className="focus-ring relative flex aspect-[4/5] w-full cursor-pointer flex-col items-center justify-center overflow-hidden border-2 border-primary bg-surface">
           {photoUrl ? <img alt="Today progress proof" className="h-full w-full object-cover" src={photoUrl} /> : <PhotoEmpty />}
-          {!completed ? <input accept="image/*" capture="environment" className="sr-only" type="file" onChange={(event) => void handlePhoto(event.currentTarget.files?.[0], today.day.id, onChange)} /> : null}
+          <input accept="image/*" capture="environment" className="sr-only" type="file" onChange={(event) => selectPhoto(event.currentTarget.files?.[0], setPendingPhotoFile, setPendingPhotoUrl, setTasks)} />
         </label>
         <p className="text-sm text-muted">Photos are stored only on this device.</p>
       </section>
@@ -104,7 +144,6 @@ export function TodayPage({ state, onChange }: { state: ActiveChallengeState; on
           className="focus-ring min-h-36 w-full border-2 border-primary bg-background p-4 text-primary placeholder:text-muted"
           placeholder="How did today go?"
           value={journal.text}
-          disabled={completed}
           onChange={(event) => setJournal((current) => ({ ...current, text: event.target.value }))}
         />
         <div className="space-y-4">
@@ -115,15 +154,12 @@ export function TodayPage({ state, onChange }: { state: ActiveChallengeState; on
             className="focus-ring w-full border-b-2 border-primary bg-background py-3 text-primary placeholder:text-muted"
             placeholder="Weight (optional)"
             value={journal.weight}
-            disabled={completed}
             onChange={(event) => setJournal((current) => ({ ...current, weight: event.target.value }))}
           />
         </div>
-        {!completed ? (
-          <button className={`focus-ring w-full border-2 py-4 label-caps transition-colors ${saveButtonClass(saveState, hasUnsavedJournal)}`} onClick={saveJournalNow} disabled={saveState === "saving" || !hasUnsavedJournal}>
-            {saveState === "saving" ? "Saving..." : saveState === "saved" ? "Saved" : "Save journal"}
-          </button>
-        ) : null}
+        <button className={`focus-ring w-full border-2 py-4 label-caps transition-colors ${saveButtonClass(saveState, hasUnsavedChanges)}`} onClick={saveChangesNow} disabled={saveState === "saving" || !hasUnsavedChanges}>
+          {saveState === "saving" ? "Saving..." : saveState === "saved" ? "Saved" : completed ? "Save changes" : "Save journal"}
+        </button>
       </section>
 
       <section className="space-y-3 pb-6">
@@ -135,7 +171,7 @@ export function TodayPage({ state, onChange }: { state: ActiveChallengeState; on
         ) : (
           <button
             className="focus-ring w-full bg-primary py-5 label-caps text-background shadow-hard disabled:opacity-40"
-            disabled={!ready || hasUnsavedJournal}
+            disabled={!ready || hasUnsavedChanges}
             onClick={async () => {
               await completeDay(today.day.id);
               await onChange();
@@ -144,21 +180,21 @@ export function TodayPage({ state, onChange }: { state: ActiveChallengeState; on
             Complete day {today.day.dayNumber}
           </button>
         )}
-        {hasUnsavedJournal ? <p className="text-center text-sm text-orange">Save or discard journal edits before completing the day.</p> : null}
+        {hasUnsavedChanges ? <p className="text-center text-sm text-orange">Save or discard changes before completing the day.</p> : null}
         {!ready && !completed ? <p className="text-center text-sm text-muted">Complete every checklist item and upload a photo before closing the day.</p> : null}
       </section>
     </main>
   );
 }
 
-function UnsavedJournalModal({ saving, onDiscard, onSave }: { saving: boolean; onDiscard: () => void; onSave: () => void }) {
+function UnsavedChangesModal({ saving, completed, onDiscard, onSave }: { saving: boolean; completed: boolean; onDiscard: () => void; onSave: () => void }) {
   return (
     <div className="fixed inset-x-0 top-0 z-[100] px-5 pt-3" role="dialog" aria-label="Unsaved journal changes">
       <div className="mx-auto flex max-w-lg items-center gap-3 border-2 border-orange bg-background p-4 shadow-hard-orange">
         <AlertTriangle className="shrink-0 text-orange" size={20} />
         <div className="min-w-0 flex-1">
           <p className="label-caps text-primary">Unsaved changes</p>
-          <p className="text-xs text-muted">Save or discard your journal edits.</p>
+          <p className="text-xs text-muted">{completed ? "Save to overwrite today's data, or discard." : "Save or discard today's edits."}</p>
         </div>
         <button className="label-caps text-muted" type="button" onClick={onDiscard}>
           Discard
@@ -184,10 +220,24 @@ function toneClass(tone: "green" | "orange" | "blue") {
   return tone === "orange" ? "bg-orange text-background" : tone === "blue" ? "bg-blue text-primary" : "bg-success text-background";
 }
 
-async function handlePhoto(file: File | undefined, dayId: string, onChange: () => Promise<void>) {
+function updateTask(taskId: string, completed: boolean, setTasks: Dispatch<SetStateAction<TaskCompletion[]>>) {
+  setTasks((current) => current.map((task) => (task.id === taskId ? { ...task, completed } : task)));
+}
+
+function selectPhoto(
+  file: File | undefined,
+  setPendingPhotoFile: Dispatch<SetStateAction<File | undefined>>,
+  setPendingPhotoUrl: Dispatch<SetStateAction<string | undefined>>,
+  setTasks: Dispatch<SetStateAction<TaskCompletion[]>>,
+) {
   if (!file) return;
-  await savePhoto(dayId, file);
-  await onChange();
+  setPendingPhotoFile(file);
+  setPendingPhotoUrl((current) => {
+    if (current) URL.revokeObjectURL(current);
+    return URL.createObjectURL(file);
+  });
+  const markPhotoComplete = (current: TaskCompletion[]) => current.map((task) => (task.taskKey === "progressPhoto" ? { ...task, completed: true } : task));
+  setTasks(markPhotoComplete);
 }
 
 function cleanJournal(input: { text: string; moodRating?: number; energyRating?: number; difficultyRating?: number; weight: string }): Omit<JournalEntry, "id" | "challengeDayId" | "createdAt" | "updatedAt"> {
@@ -225,4 +275,8 @@ function saveButtonClass(saveState: "idle" | "saving" | "saved", hasUnsavedJourn
   if (saveState === "saved") return "border-success bg-success text-background";
   if (!hasUnsavedJournal) return "border-outline text-muted opacity-60";
   return "border-primary text-primary active:bg-primary active:text-background";
+}
+
+function sameTasks(left: TaskCompletion[], right: TaskCompletion[]) {
+  return left.every((task) => task.completed === right.find((savedTask) => savedTask.taskKey === task.taskKey)?.completed);
 }

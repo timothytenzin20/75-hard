@@ -100,17 +100,18 @@ export async function getAllRecords(challengeId: string): Promise<DayRecord[]> {
   return Promise.all(days.map((day) => getDayRecord(day.id)));
 }
 
-export async function setTask(dayId: string, taskKey: TaskKey, completed: boolean): Promise<void> {
+export async function setTask(dayId: string, taskKey: TaskKey, completed: boolean, options: { preserveDayStatus?: boolean } = {}): Promise<void> {
   const task = await db.tasks.where({ challengeDayId: dayId, taskKey }).first();
   const timestamp = now();
   if (!task) return;
+  const dayUpdate = options.preserveDayStatus ? { updatedAt: timestamp } : { status: "in_progress" as const, updatedAt: timestamp };
   await db.transaction("rw", db.tasks, db.days, async () => {
     await db.tasks.update(task.id, { completed, completedAt: completed ? timestamp : undefined });
-    await db.days.update(dayId, { status: "in_progress", updatedAt: timestamp });
+    await db.days.update(dayId, dayUpdate);
   });
 }
 
-export async function savePhoto(dayId: string, file: File): Promise<void> {
+export async function savePhoto(dayId: string, file: File, options: { preserveDayStatus?: boolean } = {}): Promise<void> {
   const [imageBlob, thumbnailBlob] = await Promise.all([compressImage(file), compressImage(file, true)]);
   const timestamp = now();
   const existing = await db.photos.where("challengeDayId").equals(dayId).first();
@@ -124,16 +125,17 @@ export async function savePhoto(dayId: string, file: File): Promise<void> {
     createdAt: existing?.createdAt ?? timestamp,
     updatedAt: timestamp
   };
+  const dayUpdate = options.preserveDayStatus ? { updatedAt: timestamp } : { status: "in_progress" as const, updatedAt: timestamp };
   await db.transaction("rw", db.photos, db.tasks, db.days, async () => {
     await db.photos.put(photo);
     if (task) {
       await db.tasks.update(task.id, { completed: true, completedAt: timestamp });
     }
-    await db.days.update(dayId, { status: "in_progress", updatedAt: timestamp });
+    await db.days.update(dayId, dayUpdate);
   });
 }
 
-export async function saveJournal(dayId: string, input: Omit<JournalEntry, "id" | "challengeDayId" | "createdAt" | "updatedAt">): Promise<void> {
+export async function saveJournal(dayId: string, input: Omit<JournalEntry, "id" | "challengeDayId" | "createdAt" | "updatedAt">, options: { preserveDayStatus?: boolean } = {}): Promise<void> {
   const timestamp = now();
   const existing = await db.journals.where("challengeDayId").equals(dayId).first();
   await db.journals.put({
@@ -143,12 +145,25 @@ export async function saveJournal(dayId: string, input: Omit<JournalEntry, "id" 
     createdAt: existing?.createdAt ?? timestamp,
     updatedAt: timestamp
   });
-  await db.days.update(dayId, { status: "in_progress", updatedAt: timestamp });
+  await db.days.update(dayId, options.preserveDayStatus ? { updatedAt: timestamp } : { status: "in_progress", updatedAt: timestamp });
 }
 
 export async function completeDay(dayId: string): Promise<void> {
   const timestamp = now();
   await db.days.update(dayId, { status: "complete", completedAt: timestamp, updatedAt: timestamp });
+}
+
+export async function setDayCompletionFromRequirements(dayId: string, requirementsMet: boolean): Promise<void> {
+  const day = await db.days.get(dayId);
+  if (!day) return;
+  const timestamp = now();
+  if (requirementsMet && day.status !== "complete") {
+    await db.days.update(dayId, { status: "complete", completedAt: day.completedAt ?? timestamp, updatedAt: timestamp });
+    return;
+  }
+  if (!requirementsMet && day.status === "complete") {
+    await db.days.update(dayId, { status: "in_progress", completedAt: undefined, updatedAt: timestamp });
+  }
 }
 
 export async function getStatsInputs(challengeId: string) {
