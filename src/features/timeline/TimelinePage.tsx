@@ -40,7 +40,7 @@ function Legend({ color, label }: { color: string; label: string }) {
 }
 
 function labelFor(status: string) {
-  if (status === "complete") return "OK";
+  if (status === "complete") return "✔";
   if (status === "missed") return "X";
   if (status === "in_progress") return "!";
   return "";

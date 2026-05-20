@@ -1,5 +1,5 @@
 import { AlertTriangle, Camera, Check, Share2 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { TASKS } from "../../domain/constants";
 import { canCompleteDay, completedTaskCount } from "../../domain/metrics";
@@ -11,15 +11,10 @@ import { RatingControl } from "../../components/common/RatingControl";
 export function TodayPage({ state, onChange }: { state: ActiveChallengeState; onChange: () => Promise<void> }) {
   const { today } = state;
   const [photoUrl, setPhotoUrl] = useState<string>();
-  const [journal, setJournal] = useState({
-    text: today.journal?.text ?? "",
-    moodRating: today.journal?.moodRating,
-    energyRating: today.journal?.energyRating,
-    difficultyRating: today.journal?.difficultyRating,
-    weight: today.journal?.weight ?? ""
-  });
+  const [loadedDayId, setLoadedDayId] = useState(today.day.id);
+  const [savedJournal, setSavedJournal] = useState(() => getJournalForm(today.journal));
+  const [journal, setJournal] = useState(() => getJournalForm(today.journal));
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
-  const savedJournal = useMemo(() => getJournalForm(today.journal), [today.journal]);
   const completeCount = completedTaskCount(today);
   const ready = canCompleteDay(today);
   const completed = today.day.status === "complete";
@@ -34,13 +29,22 @@ export function TodayPage({ state, onChange }: { state: ActiveChallengeState; on
   }, [today.photo]);
 
   useEffect(() => {
-    setJournal(savedJournal);
-    setSaveState("idle");
-  }, [savedJournal]);
+    if (today.day.id !== loadedDayId) {
+      const nextJournal = getJournalForm(today.journal);
+      setLoadedDayId(today.day.id);
+      setSavedJournal(nextJournal);
+      setJournal(nextJournal);
+      setSaveState("idle");
+    }
+  }, [loadedDayId, today.day.id, today.journal]);
 
   const saveJournalNow = async () => {
+    if (!hasUnsavedJournal) return;
     setSaveState("saving");
-    await saveJournal(today.day.id, cleanJournal(journal));
+    const normalizedJournal = normalizeJournalForm(journal);
+    await saveJournal(today.day.id, cleanJournal(normalizedJournal));
+    setJournal(normalizedJournal);
+    setSavedJournal(normalizedJournal);
     await onChange();
     setSaveState("saved");
     window.setTimeout(() => setSaveState("idle"), 1200);
@@ -53,7 +57,7 @@ export function TodayPage({ state, onChange }: { state: ActiveChallengeState; on
 
   return (
     <main className="space-y-8 px-5 py-8">
-      {hasUnsavedJournal ? <UnsavedJournalBar onDiscard={discardJournalChanges} onSave={() => void saveJournalNow()} saving={saveState === "saving"} /> : null}
+      {hasUnsavedJournal ? <UnsavedJournalModal onDiscard={discardJournalChanges} onSave={() => void saveJournalNow()} saving={saveState === "saving"} /> : null}
       <section className="hard-card p-5">
         <div className="flex items-end justify-between">
           <div>
@@ -116,8 +120,8 @@ export function TodayPage({ state, onChange }: { state: ActiveChallengeState; on
           />
         </div>
         {!completed ? (
-          <button className={`focus-ring w-full border-2 py-4 label-caps transition-colors ${saveButtonClass(saveState, hasUnsavedJournal)}`} onClick={saveJournalNow} disabled={saveState === "saving"}>
-            {saveState === "saving" ? "Saving..." : saveState === "saved" ? "Saved" : hasUnsavedJournal ? "Save journal" : "Journal saved"}
+          <button className={`focus-ring w-full border-2 py-4 label-caps transition-colors ${saveButtonClass(saveState, hasUnsavedJournal)}`} onClick={saveJournalNow} disabled={saveState === "saving" || !hasUnsavedJournal}>
+            {saveState === "saving" ? "Saving..." : saveState === "saved" ? "Saved" : "Save journal"}
           </button>
         ) : null}
       </section>
@@ -131,9 +135,8 @@ export function TodayPage({ state, onChange }: { state: ActiveChallengeState; on
         ) : (
           <button
             className="focus-ring w-full bg-primary py-5 label-caps text-background shadow-hard disabled:opacity-40"
-            disabled={!ready}
+            disabled={!ready || hasUnsavedJournal}
             onClick={async () => {
-              await saveJournal(today.day.id, cleanJournal(journal));
               await completeDay(today.day.id);
               await onChange();
             }}
@@ -141,16 +144,17 @@ export function TodayPage({ state, onChange }: { state: ActiveChallengeState; on
             Complete day {today.day.dayNumber}
           </button>
         )}
+        {hasUnsavedJournal ? <p className="text-center text-sm text-orange">Save or discard journal edits before completing the day.</p> : null}
         {!ready && !completed ? <p className="text-center text-sm text-muted">Complete every checklist item and upload a photo before closing the day.</p> : null}
       </section>
     </main>
   );
 }
 
-function UnsavedJournalBar({ saving, onDiscard, onSave }: { saving: boolean; onDiscard: () => void; onSave: () => void }) {
+function UnsavedJournalModal({ saving, onDiscard, onSave }: { saving: boolean; onDiscard: () => void; onSave: () => void }) {
   return (
-    <div className="fixed inset-x-0 top-14 z-40 border-b-2 border-orange bg-background/95 backdrop-blur-sm">
-      <div className="mx-auto flex max-w-lg items-center gap-3 px-5 py-3">
+    <div className="fixed inset-x-0 top-0 z-[100] px-5 pt-3" role="dialog" aria-label="Unsaved journal changes">
+      <div className="mx-auto flex max-w-lg items-center gap-3 border-2 border-orange bg-background p-4 shadow-hard-orange">
         <AlertTriangle className="shrink-0 text-orange" size={20} />
         <div className="min-w-0 flex-1">
           <p className="label-caps text-primary">Unsaved changes</p>
@@ -206,8 +210,19 @@ function getJournalForm(journal?: JournalEntry) {
   };
 }
 
+function normalizeJournalForm(input: ReturnType<typeof getJournalForm>) {
+  return {
+    text: input.text.trim(),
+    moodRating: input.moodRating,
+    energyRating: input.energyRating,
+    difficultyRating: input.difficultyRating,
+    weight: input.weight.trim()
+  };
+}
+
 function saveButtonClass(saveState: "idle" | "saving" | "saved", hasUnsavedJournal: boolean) {
   if (saveState === "saving") return "border-orange bg-orange text-background";
-  if (saveState === "saved" || !hasUnsavedJournal) return "border-success bg-success text-background";
+  if (saveState === "saved") return "border-success bg-success text-background";
+  if (!hasUnsavedJournal) return "border-outline text-muted opacity-60";
   return "border-primary text-primary active:bg-primary active:text-background";
 }
