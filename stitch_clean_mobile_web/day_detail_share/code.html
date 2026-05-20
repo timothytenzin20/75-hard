@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Day 12 / 75 - Entry Detail</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&amp;family=JetBrains+Mono:wght@400;700;800&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "primary-fixed-dim": "#c6c6c7",
+                    "on-tertiary-container": "#646464",
+                    "surface-container-lowest": "#0e0e0e",
+                    "safety-orange": "#FF5F1F",
+                    "error-container": "#93000a",
+                    "tertiary-fixed-dim": "#c6c6c6",
+                    "surface-dim": "#141313",
+                    "outline": "#8e9192",
+                    "surface": "#141313",
+                    "on-tertiary": "#303030",
+                    "tertiary-fixed": "#e2e2e2",
+                    "on-primary-fixed": "#1a1c1c",
+                    "surface-variant": "#353434",
+                    "inverse-on-surface": "#313030",
+                    "surface-tint": "#c6c6c7",
+                    "on-secondary-fixed": "#390c00",
+                    "secondary-fixed": "#ffdbcf",
+                    "on-secondary-container": "#511500",
+                    "on-primary-fixed-variant": "#454747",
+                    "primary-container": "#e2e2e2",
+                    "on-background": "#e5e2e1",
+                    "inverse-primary": "#5d5f5f",
+                    "tertiary": "#ffffff",
+                    "tertiary-container": "#e2e2e2",
+                    "on-surface": "#e5e2e1",
+                    "outline-variant": "#444748",
+                    "electric-blue": "#007AFF",
+                    "on-secondary": "#5c1900",
+                    "success-green": "#00FF41",
+                    "surface-gray": "#121212",
+                    "surface-container": "#201f1f",
+                    "failure-red": "#FF0000",
+                    "on-surface-variant": "#c4c7c8",
+                    "secondary-container": "#fa5c1c",
+                    "surface-container-low": "#1c1b1b",
+                    "on-primary-container": "#636565",
+                    "on-tertiary-fixed-variant": "#474747",
+                    "on-tertiary-fixed": "#1b1b1b",
+                    "error": "#ffb4ab",
+                    "primary": "#ffffff",
+                    "on-error": "#690005",
+                    "on-primary": "#2f3131",
+                    "on-error-container": "#ffdad6",
+                    "inverse-surface": "#e5e2e1",
+                    "on-secondary-fixed-variant": "#832700",
+                    "surface-container-high": "#2a2a2a",
+                    "secondary": "#ffb59c",
+                    "primary-fixed": "#e2e2e2",
+                    "background": "#141313",
+                    "surface-bright": "#3a3939",
+                    "surface-container-highest": "#353434",
+                    "secondary-fixed-dim": "#ffb59c"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "base": "4px",
+                    "stack-gap": "12px",
+                    "container-padding": "20px",
+                    "touch-target-min": "48px",
+                    "section-gap": "32px"
+            },
+            "fontFamily": {
+                    "headline-xl": ["JetBrains Mono"],
+                    "body-md": ["Inter"],
+                    "headline-lg": ["JetBrains Mono"],
+                    "label-caps": ["JetBrains Mono"],
+                    "body-lg": ["Inter"],
+                    "headline-lg-mobile": ["JetBrains Mono"],
+                    "stats-display": ["JetBrains Mono"]
+            },
+            "fontSize": {
+                    "headline-xl": ["48px", {"lineHeight": "48px", "letterSpacing": "-0.04em", "fontWeight": "800"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "headline-lg": ["32px", {"lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "label-caps": ["12px", {"lineHeight": "16px", "letterSpacing": "0.1em", "fontWeight": "700"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "32px", "fontWeight": "700"}],
+                    "stats-display": ["64px", {"lineHeight": "64px", "fontWeight": "800"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .brutalist-border {
+            border: 2px solid #ffffff;
+        }
+        .hard-shadow {
+            box-shadow: 4px 4px 0px 0px #000000;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #141313;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #ffffff;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background font-body-md text-body-md selection:bg-safety-orange selection:text-white overflow-x-hidden">
+<!-- Top Navigation -->
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-container-padding h-touch-target-min bg-background border-b-2 border-primary">
+<button aria-label="Back" class="active:invert transition-colors duration-100 p-2">
+<span class="material-symbols-outlined text-primary" data-icon="arrow_back">arrow_back</span>
+</button>
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile font-bold text-primary">DAY 12 / 75</h1>
+<button aria-label="Options" class="active:invert transition-colors duration-100 p-2">
+<span class="material-symbols-outlined text-primary" data-icon="more_vert">more_vert</span>
+</button>
+</header>
+<main class="pt-[64px] pb-24 px-container-padding flex flex-col gap-section-gap">
+<!-- Large Proof Photo -->
+<section class="w-full flex flex-col gap-4">
+<div class="relative w-full aspect-[4/5] bg-surface-gray border-2 border-primary overflow-hidden">
+<img alt="Daily Progress Proof" class="w-full h-full object-cover" data-alt="A gritty, high-contrast monochrome photograph of a determined individual in a minimalist home gym setting. Harsh directional lighting creates deep shadows, emphasizing the raw and disciplined atmosphere of a 75 Hard challenge. The image is sharp and utilitarian, captured in a raw documentary style that focuses on the physical reality of the grind, with cold white highlights and deep black tones." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDcA-PBHvB8q9FiNbIShOtlCN4mcTA-JGe7tlDwKUBSvAQ0OAVibNJQWRntYkQsRQIWfT23Og0R0W51XZj8dmwZh06NBxjixGD3o5K_8SWaaVKW_phNdSD98IeqYAzNcP3V9AmWTJHccW1K4SP3fr4p52ndtEY1z-c8wz2DcMIW7CtqMBJeahTI836kikVUPFBvXXVh1qmRQ9hCU4BqfvrkeV1LkxGnH1viuIe90EdpmncJeY4lBnkPIcuh2erO-XPdyQr5Rgxj8Ns"/>
+<div class="absolute bottom-4 left-4 bg-background border border-primary px-3 py-1 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[16px]" data-icon="schedule">schedule</span>
+<span class="font-label-caps text-label-caps text-primary uppercase">06:42 AM TIMESTAMPED</span>
+</div>
+</div>
+</section>
+<!-- Metadata Bento Grid -->
+<section class="grid grid-cols-2 gap-4">
+<div class="bg-surface-gray border border-primary p-4 flex flex-col gap-1">
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase">MOOD</span>
+<div class="flex items-center gap-2">
+<span class="font-headline-lg text-headline-lg text-safety-orange">4</span>
+<span class="font-label-caps text-label-caps text-on-surface-variant">/ 5</span>
+</div>
+</div>
+<div class="bg-surface-gray border border-primary p-4 flex flex-col gap-1">
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase">ENERGY</span>
+<div class="flex items-center gap-2">
+<span class="font-headline-lg text-headline-lg text-safety-orange">3</span>
+<span class="font-label-caps text-label-caps text-on-surface-variant">/ 5</span>
+</div>
+</div>
+</section>
+<!-- Checklist Summary -->
+<section class="flex flex-col gap-4">
+<h2 class="font-label-caps text-label-caps text-on-surface-variant border-b border-primary pb-2 uppercase tracking-widest">CHECKLIST RESULTS</h2>
+<div class="flex flex-col">
+<div class="flex items-center justify-between py-4 border-b border-surface-variant group">
+<span class="font-body-lg text-body-lg line-through text-on-surface-variant">Workout 1 (45min Out)</span>
+<span class="material-symbols-outlined text-success-green" data-icon="check_box" style="font-variation-settings: 'FILL' 1;">check_box</span>
+</div>
+<div class="flex items-center justify-between py-4 border-b border-surface-variant group">
+<span class="font-body-lg text-body-lg line-through text-on-surface-variant">Workout 2 (45min)</span>
+<span class="material-symbols-outlined text-success-green" data-icon="check_box" style="font-variation-settings: 'FILL' 1;">check_box</span>
+</div>
+<div class="flex items-center justify-between py-4 border-b border-surface-variant group">
+<span class="font-body-lg text-body-lg line-through text-on-surface-variant">Follow Diet Plan</span>
+<span class="material-symbols-outlined text-success-green" data-icon="check_box" style="font-variation-settings: 'FILL' 1;">check_box</span>
+</div>
+<div class="flex items-center justify-between py-4 border-b border-surface-variant group">
+<span class="font-body-lg text-body-lg line-through text-on-surface-variant">1 Gallon of Water</span>
+<span class="material-symbols-outlined text-success-green" data-icon="check_box" style="font-variation-settings: 'FILL' 1;">check_box</span>
+</div>
+<div class="flex items-center justify-between py-4 border-b border-surface-variant group">
+<span class="font-body-lg text-body-lg line-through text-on-surface-variant">Read 10 Pages</span>
+<span class="material-symbols-outlined text-success-green" data-icon="check_box" style="font-variation-settings: 'FILL' 1;">check_box</span>
+</div>
+<div class="flex items-center justify-between py-4 border-b border-primary group">
+<span class="font-body-lg text-body-lg line-through text-on-surface-variant">Progress Photo</span>
+<span class="material-symbols-outlined text-success-green" data-icon="check_box" style="font-variation-settings: 'FILL' 1;">check_box</span>
+</div>
+</div>
+</section>
+<!-- Journal Entry -->
+<section class="flex flex-col gap-4">
+<h2 class="font-label-caps text-label-caps text-on-surface-variant border-b border-primary pb-2 uppercase tracking-widest">SYSTEM LOG: JOURNAL</h2>
+<div class="bg-surface-gray border border-primary p-6 relative">
+<span class="material-symbols-outlined absolute top-4 right-4 text-on-surface-variant opacity-30 text-[48px]" data-icon="format_quote">format_quote</span>
+<p class="font-body-lg text-body-lg leading-relaxed text-primary relative z-10">
+                    Woke up before the alarm today. The outdoor workout was freezing but necessary for the mental shift. Found myself wanting to cheat on the diet around 3 PM, but remembered the promise. Consistency is the only currency that matters right now. Feeling tired, but the discipline is becoming more automatic. 63 days to go. No excuses.
+                </p>
+<div class="mt-8 pt-4 border-t border-surface-variant flex justify-between items-center">
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase">ENTRY ID: #75H-12</span>
+<span class="font-label-caps text-label-caps text-safety-orange uppercase">STATUS: COMPLETED</span>
+</div>
+</div>
+</section>
+<!-- Actions -->
+<section class="flex flex-col gap-4 mt-8">
+<button class="w-full h-14 bg-primary text-on-primary font-headline-lg-mobile text-[16px] uppercase tracking-[0.2em] font-bold active:bg-safety-orange active:text-white transition-all duration-100 flex items-center justify-center gap-3" onclick="handleShare()">
+<span class="material-symbols-outlined" data-icon="share">share</span>
+                SHARE PROOF
+            </button>
+<button class="w-full h-14 border-2 border-primary text-primary font-headline-lg-mobile text-[16px] uppercase tracking-[0.2em] font-bold active:invert transition-all duration-100 flex items-center justify-center gap-3">
+<span class="material-symbols-outlined" data-icon="edit">edit</span>
+                EDIT ENTRY
+            </button>
+</section>
+</main>
+<!-- Bottom Nav (Hidden for detail view as per UX Goal) -->
+<!-- Suppressed to prioritize the "Share Proof" transactional focus -->
+<script>
+        function handleShare() {
+            const btn = event.currentTarget;
+            const originalHtml = btn.innerHTML;
+            
+            // Interaction feedback
+            btn.innerHTML = `
+                <span class="material-symbols-outlined animate-spin" data-icon="progress_activity">progress_activity</span>
+                GENERATING RECAP...
+            `;
+            
+            setTimeout(() => {
+                btn.innerHTML = `
+                    <span class="material-symbols-outlined" data-icon="done_all">done_all</span>
+                    RECAP READY
+                `;
+                btn.classList.replace('bg-primary', 'bg-success-green');
+                btn.classList.replace('text-on-primary', 'text-black');
+                
+                setTimeout(() => {
+                    btn.innerHTML = originalHtml;
+                    btn.classList.replace('bg-success-green', 'bg-primary');
+                    btn.classList.replace('text-black', 'text-on-primary');
+                }, 2000);
+            }, 1500);
+        }
+
+        // Simple scroll parallax for photo
+        window.addEventListener('scroll', () => {
+            const img = document.querySelector('img');
+            const scroll = window.pageYOffset;
+            img.style.transform = `translateY(${scroll * 0.1}px)`;
+        });
+    </script>
+</body></html>

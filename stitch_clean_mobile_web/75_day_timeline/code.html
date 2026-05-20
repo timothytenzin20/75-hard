@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&amp;family=Inter:wght@400;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary-fixed-dim": "#c6c6c7",
+                        "on-tertiary-container": "#646464",
+                        "surface-container-lowest": "#0e0e0e",
+                        "safety-orange": "#FF5F1F",
+                        "error-container": "#93000a",
+                        "tertiary-fixed-dim": "#c6c6c6",
+                        "surface-dim": "#141313",
+                        "outline": "#8e9192",
+                        "surface": "#141313",
+                        "on-tertiary": "#303030",
+                        "tertiary-fixed": "#e2e2e2",
+                        "on-primary-fixed": "#1a1c1c",
+                        "surface-variant": "#353434",
+                        "inverse-on-surface": "#313030",
+                        "surface-tint": "#c6c6c7",
+                        "on-secondary-fixed": "#390c00",
+                        "secondary-fixed": "#ffdbcf",
+                        "on-secondary-container": "#511500",
+                        "on-primary-fixed-variant": "#454747",
+                        "primary-container": "#e2e2e2",
+                        "on-background": "#e5e2e1",
+                        "inverse-primary": "#5d5f5f",
+                        "tertiary": "#ffffff",
+                        "tertiary-container": "#e2e2e2",
+                        "on-surface": "#e5e2e1",
+                        "outline-variant": "#444748",
+                        "electric-blue": "#007AFF",
+                        "on-secondary": "#5c1900",
+                        "success-green": "#00FF41",
+                        "surface-gray": "#121212",
+                        "surface-container": "#201f1f",
+                        "failure-red": "#FF0000",
+                        "on-surface-variant": "#c4c7c8",
+                        "secondary-container": "#fa5c1c",
+                        "surface-container-low": "#1c1b1b",
+                        "on-primary-container": "#636565",
+                        "on-tertiary-fixed-variant": "#474747",
+                        "on-tertiary-fixed": "#1b1b1b",
+                        "error": "#ffb4ab",
+                        "primary": "#ffffff",
+                        "on-error": "#690005",
+                        "on-primary": "#2f3131",
+                        "on-error-container": "#ffdad6",
+                        "inverse-surface": "#e5e2e1",
+                        "on-secondary-fixed-variant": "#832700",
+                        "surface-container-high": "#2a2a2a",
+                        "secondary": "#ffb59c",
+                        "primary-fixed": "#e2e2e2",
+                        "background": "#141313",
+                        "surface-bright": "#3a3939",
+                        "surface-container-highest": "#353434",
+                        "secondary-fixed-dim": "#ffb59c"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "base": "4px",
+                        "stack-gap": "12px",
+                        "container-padding": "20px",
+                        "touch-target-min": "48px",
+                        "section-gap": "32px"
+                    },
+                    "fontFamily": {
+                        "headline-xl": ["JetBrains Mono"],
+                        "body-md": ["Inter"],
+                        "headline-lg": ["JetBrains Mono"],
+                        "label-caps": ["JetBrains Mono"],
+                        "body-lg": ["Inter"],
+                        "headline-lg-mobile": ["JetBrains Mono"],
+                        "stats-display": ["JetBrains Mono"]
+                    },
+                    "fontSize": {
+                        "headline-xl": ["48px", {"lineHeight": "48px", "letterSpacing": "-0.04em", "fontWeight": "800"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "headline-lg": ["32px", {"lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "label-caps": ["12px", {"lineHeight": "16px", "letterSpacing": "0.1em", "fontWeight": "700"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "headline-lg-mobile": ["28px", {"lineHeight": "32px", "fontWeight": "700"}],
+                        "stats-display": ["64px", {"lineHeight": "64px", "fontWeight": "800"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .filled-icon {
+            font-variation-settings: 'FILL' 1;
+        }
+        .brutalist-border {
+            border: 2px solid white;
+        }
+        .brutalist-shadow {
+            box-shadow: 4px 4px 0px 0px rgba(255, 255, 255, 1);
+        }
+        body {
+            background-color: #141313;
+            color: #ffffff;
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .grid-day {
+            aspect-ratio: 1 / 1;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="pb-24 pt-16">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-container-padding h-touch-target-min bg-background dark:bg-background border-b-2 border-primary dark:border-primary">
+<button class="active:invert transition-colors duration-100 p-2 hover:bg-surface-variant dark:hover:bg-surface-variant">
+<span class="material-symbols-outlined text-primary dark:text-primary">menu</span>
+</button>
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile font-bold text-primary dark:text-primary">DAY 12 / 75</h1>
+<button class="active:invert transition-colors duration-100 p-2 hover:bg-surface-variant dark:hover:bg-surface-variant">
+<span class="material-symbols-outlined text-primary dark:text-primary">account_circle</span>
+</button>
+</header>
+<main class="px-container-padding pt-section-gap">
+<!-- Statistics Summary (Bento Style) -->
+<section class="grid grid-cols-2 gap-4 mb-section-gap">
+<div class="col-span-2 brutalist-border p-4 bg-surface-container-high flex flex-col justify-between">
+<span class="font-label-caps text-label-caps text-on-surface-variant">CURRENT STREAK</span>
+<div class="flex items-baseline gap-2">
+<span class="font-stats-display text-stats-display text-success-green">12</span>
+<span class="font-headline-lg text-headline-lg">DAYS</span>
+</div>
+</div>
+<div class="brutalist-border p-4 bg-surface-container flex flex-col items-center justify-center text-center">
+<span class="font-label-caps text-label-caps text-on-surface-variant mb-2">COMPLETED</span>
+<span class="font-headline-lg text-headline-lg">16%</span>
+</div>
+<div class="brutalist-border p-4 bg-surface-container flex flex-col items-center justify-center text-center">
+<span class="font-label-caps text-label-caps text-on-surface-variant mb-2">REMAINING</span>
+<span class="font-headline-lg text-headline-lg">63</span>
+</div>
+</section>
+<!-- Timeline Grid -->
+<section>
+<div class="flex justify-between items-end mb-4">
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile font-bold uppercase">Chronicle</h2>
+<span class="font-label-caps text-label-caps text-on-surface-variant">01 — 75</span>
+</div>
+<div class="grid grid-cols-5 gap-3" id="timeline-grid">
+<!-- Days 1-11 (Completed) -->
+<script>
+                    const grid = document.getElementById('timeline-grid');
+                    for (let i = 1; i <= 75; i++) {
+                        const dayDiv = document.createElement('div');
+                        dayDiv.className = 'grid-day brutalist-border flex flex-col items-center justify-center relative transition-all active:scale-95 cursor-pointer';
+                        
+                        let content = '';
+                        if (i < 12) {
+                            // Completed Days
+                            dayDiv.classList.add('bg-success-green', 'text-background');
+                            content = `
+                                <span class="font-label-caps text-[10px] absolute top-1 left-1">D${i}</span>
+                                <span class="material-symbols-outlined filled-icon" style="font-variation-settings: 'FILL' 1;">check_box</span>
+                            `;
+                        } else if (i === 12) {
+                            // Current Day
+                            dayDiv.classList.add('bg-safety-orange', 'text-background', 'brutalist-shadow', '-translate-x-1', '-translate-y-1');
+                            content = `
+                                <span class="font-label-caps text-[10px] absolute top-1 left-1">D${i}</span>
+                                <span class="font-headline-lg text-headline-lg">!</span>
+                            `;
+                        } else {
+                            // Future Days
+                            dayDiv.classList.add('bg-surface-gray', 'text-on-surface-variant', 'border-opacity-30');
+                            content = `
+                                <span class="font-label-caps text-[10px] absolute top-1 left-1">D${i}</span>
+                                <span class="text-[10px] opacity-40">LOCKED</span>
+                            `;
+                        }
+                        
+                        dayDiv.innerHTML = content;
+                        grid.appendChild(dayDiv);
+                    }
+                </script>
+</div>
+</section>
+<!-- Legendary Log Entry (Detailed View for active day) -->
+<section class="mt-section-gap mb-12">
+<div class="brutalist-border bg-surface-container p-6 relative overflow-hidden">
+<div class="absolute top-0 right-0 p-2 opacity-10">
+<span class="material-symbols-outlined text-[80px]">history_edu</span>
+</div>
+<div class="flex flex-col gap-4 relative z-10">
+<div class="flex justify-between items-start">
+<div>
+<span class="font-label-caps text-label-caps text-safety-orange">ACTIVE RECORD</span>
+<h3 class="font-headline-lg text-headline-lg mt-1">DAY 12</h3>
+</div>
+<div class="text-right">
+<span class="font-label-caps text-label-caps block">14:22:04</span>
+<span class="font-label-caps text-label-caps text-on-surface-variant">TIMESTAMP</span>
+</div>
+</div>
+<div class="h-[2px] bg-primary w-full opacity-20"></div>
+<div class="grid grid-cols-2 gap-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-success-green filled-icon" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="font-label-caps text-label-caps">WORKOUT 1</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-on-surface-variant">radio_button_unchecked</span>
+<span class="font-label-caps text-label-caps">WORKOUT 2</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-success-green filled-icon" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="font-label-caps text-label-caps">DIET</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-on-surface-variant">radio_button_unchecked</span>
+<span class="font-label-caps text-label-caps">WATER</span>
+</div>
+</div>
+<button class="mt-4 brutalist-border bg-primary text-background font-label-caps text-label-caps py-3 w-full hover:bg-background hover:text-primary transition-colors active:scale-[0.98]">
+                        RESUME EVIDENCE LOG
+                    </button>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-full z-50 flex justify-around items-stretch h-[64px] bg-background dark:bg-background border-t-2 border-primary dark:border-primary">
+<a class="flex flex-col items-center justify-center text-primary dark:text-primary px-4 py-2 hover:bg-surface-container-highest dark:hover:bg-surface-container-highest active:scale-95 transition-transform duration-75" href="#">
+<span class="material-symbols-outlined">check_box</span>
+<span class="font-label-caps text-label-caps">TODAY</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-primary dark:bg-primary text-on-primary dark:text-on-primary px-4 py-2 hover:bg-surface-container-highest dark:hover:bg-surface-container-highest active:scale-95 transition-transform duration-75" href="#">
+<span class="material-symbols-outlined filled-icon" style="font-variation-settings: 'FILL' 1;">history</span>
+<span class="font-label-caps text-label-caps">TIMELINE</span>
+</a>
+<a class="flex flex-col items-center justify-center text-primary dark:text-primary px-4 py-2 hover:bg-surface-container-highest dark:hover:bg-surface-container-highest active:scale-95 transition-transform duration-75" href="#">
+<span class="material-symbols-outlined">leaderboard</span>
+<span class="font-label-caps text-label-caps">STATS</span>
+</a>
+</nav>
+<!-- Visual Polish: Grit Overlay -->
+<div class="fixed inset-0 pointer-events-none z-[100] opacity-[0.03]" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBAUyC082Iw94rBukQJ2x_EhGqf_sjbqIe11Kpc2uN1MWoTXE0h42lMmBmYwzKk1xgOsVf01CjGDUC2q63YRnCZa_9hdlpwkk732t0y_0t0mRoDNmFOrrNrMv1QuCZ9zLrNtKpgWgNJgO2NF2etpmQhlWvdhTjuyh4EXTa4F-73-QpElKJh0pYTHH38ozuSZtvX0UTvynpuKGbs-BK2QYz3Jy2Wg7zjwrjOueAWfI6wd8G3966Sd2y4ZeLJWr_ECRSHWwN_JVT1iR8');"></div>
+<script>
+        // Simple Interaction logic for tapping days
+        document.querySelectorAll('.grid-day').forEach(day => {
+            day.addEventListener('click', () => {
+                // In a real app, this would open a specific day record
+                // For now, we'll just flash the safety orange border
+                const originalBorder = day.style.borderColor;
+                day.style.borderColor = '#FF5F1F';
+                setTimeout(() => {
+                    day.style.borderColor = originalBorder;
+                }, 300);
+            });
+        });
+    </script>
+</body></html>

@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>DayProof - Today Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&amp;family=Inter:wght@400;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary-fixed-dim": "#c6c6c7",
+                        "on-tertiary-container": "#646464",
+                        "surface-container-lowest": "#0e0e0e",
+                        "safety-orange": "#FF5F1F",
+                        "error-container": "#93000a",
+                        "tertiary-fixed-dim": "#c6c6c6",
+                        "surface-dim": "#141313",
+                        "outline": "#8e9192",
+                        "surface": "#141313",
+                        "on-tertiary": "#303030",
+                        "tertiary-fixed": "#e2e2e2",
+                        "on-primary-fixed": "#1a1c1c",
+                        "surface-variant": "#353434",
+                        "inverse-on-surface": "#313030",
+                        "surface-tint": "#c6c6c7",
+                        "on-secondary-fixed": "#390c00",
+                        "secondary-fixed": "#ffdbcf",
+                        "on-secondary-container": "#511500",
+                        "on-primary-fixed-variant": "#454747",
+                        "primary-container": "#e2e2e2",
+                        "on-background": "#e5e2e1",
+                        "inverse-primary": "#5d5f5f",
+                        "tertiary": "#ffffff",
+                        "tertiary-container": "#e2e2e2",
+                        "on-surface": "#e5e2e1",
+                        "outline-variant": "#444748",
+                        "electric-blue": "#007AFF",
+                        "on-secondary": "#5c1900",
+                        "success-green": "#00FF41",
+                        "surface-gray": "#121212",
+                        "surface-container": "#201f1f",
+                        "failure-red": "#FF0000",
+                        "on-surface-variant": "#c4c7c8",
+                        "secondary-container": "#fa5c1c",
+                        "surface-container-low": "#1c1b1b",
+                        "on-primary-container": "#636565",
+                        "on-tertiary-fixed-variant": "#474747",
+                        "on-tertiary-fixed": "#1b1b1b",
+                        "error": "#ffb4ab",
+                        "primary": "#ffffff",
+                        "on-error": "#690005",
+                        "on-primary": "#2f3131",
+                        "on-error-container": "#ffdad6",
+                        "inverse-surface": "#e5e2e1",
+                        "on-secondary-fixed-variant": "#832700",
+                        "surface-container-high": "#2a2a2a",
+                        "secondary": "#ffb59c",
+                        "primary-fixed": "#e2e2e2",
+                        "background": "#141313",
+                        "surface-bright": "#3a3939",
+                        "surface-container-highest": "#353434",
+                        "secondary-fixed-dim": "#ffb59c"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "base": "4px",
+                        "stack-gap": "12px",
+                        "container-padding": "20px",
+                        "touch-target-min": "48px",
+                        "section-gap": "32px"
+                    },
+                    "fontFamily": {
+                        "headline-xl": ["JetBrains Mono"],
+                        "body-md": ["Inter"],
+                        "headline-lg": ["JetBrains Mono"],
+                        "label-caps": ["JetBrains Mono"],
+                        "body-lg": ["Inter"],
+                        "headline-lg-mobile": ["JetBrains Mono"],
+                        "stats-display": ["JetBrains Mono"]
+                    },
+                    "fontSize": {
+                        "headline-xl": ["48px", {"lineHeight": "48px", "letterSpacing": "-0.04em", "fontWeight": "800"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "headline-lg": ["32px", {"lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "label-caps": ["12px", {"lineHeight": "16px", "letterSpacing": "0.1em", "fontWeight": "700"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "headline-lg-mobile": ["28px", {"lineHeight": "32px", "fontWeight": "700"}],
+                        "stats-display": ["64px", {"lineHeight": "64px", "fontWeight": "800"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .checklist-item-checked {
+            text-decoration: line-through;
+            opacity: 0.6;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .brutalist-border {
+            border: 2px solid white;
+        }
+        .brutalist-shadow {
+            box-shadow: 4px 4px 0px 0px rgba(255, 255, 255, 1);
+        }
+        .active-invert:active {
+            filter: invert(1);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background font-body-md text-body-md min-h-screen pb-[120px]">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-container-padding h-touch-target-min bg-background dark:bg-background border-b-2 border-primary dark:border-primary">
+<button class="active:invert transition-colors duration-100 hover:bg-surface-variant dark:hover:bg-surface-variant p-2">
+<span class="material-symbols-outlined text-primary">menu</span>
+</button>
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile font-bold text-primary dark:text-primary">DAY 12 / 75</h1>
+<button class="active:invert transition-colors duration-100 hover:bg-surface-variant dark:hover:bg-surface-variant p-2">
+<span class="material-symbols-outlined text-primary">account_circle</span>
+</button>
+</header>
+<main class="pt-[64px] px-container-padding flex flex-col gap-section-gap">
+<!-- Checklist Section -->
+<section class="mt-8">
+<div class="flex flex-col">
+<!-- Checklist Items -->
+<div class="checklist-container flex flex-col">
+<label class="group flex items-center justify-between min-h-[56px] border-b border-primary py-4 cursor-pointer active:bg-surface-container-high transition-colors">
+<span class="font-label-caps text-label-caps tracking-widest uppercase text-on-background transition-all">Follow diet</span>
+<input class="hidden peer" type="checkbox"/>
+<div class="w-8 h-8 brutalist-border flex items-center justify-center transition-all peer-checked:bg-success-green peer-checked:border-success-green">
+<span class="material-symbols-outlined text-background hidden peer-checked:block" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+</label>
+<label class="group flex items-center justify-between min-h-[56px] border-b border-primary py-4 cursor-pointer active:bg-surface-container-high transition-colors">
+<span class="font-label-caps text-label-caps tracking-widest uppercase text-on-background transition-all">No alcohol</span>
+<input class="hidden peer" type="checkbox"/>
+<div class="w-8 h-8 brutalist-border flex items-center justify-center transition-all peer-checked:bg-success-green peer-checked:border-success-green">
+<span class="material-symbols-outlined text-background hidden peer-checked:block" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+</label>
+<label class="group flex items-center justify-between min-h-[56px] border-b border-primary py-4 cursor-pointer active:bg-surface-container-high transition-colors">
+<span class="font-label-caps text-label-caps tracking-widest uppercase text-on-background transition-all">Workout 1 (45min)</span>
+<input class="hidden peer" type="checkbox"/>
+<div class="w-8 h-8 brutalist-border flex items-center justify-center transition-all peer-checked:bg-safety-orange peer-checked:border-safety-orange">
+<span class="material-symbols-outlined text-background hidden peer-checked:block" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+</label>
+<label class="group flex items-center justify-between min-h-[56px] border-b border-primary py-4 cursor-pointer active:bg-surface-container-high transition-colors">
+<span class="font-label-caps text-label-caps tracking-widest uppercase text-on-background transition-all">Workout 2 (45min)</span>
+<input class="hidden peer" type="checkbox"/>
+<div class="w-8 h-8 brutalist-border flex items-center justify-center transition-all peer-checked:bg-safety-orange peer-checked:border-safety-orange">
+<span class="material-symbols-outlined text-background hidden peer-checked:block" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+</label>
+<label class="group flex items-center justify-between min-h-[56px] border-b border-primary py-4 cursor-pointer active:bg-surface-container-high transition-colors">
+<span class="font-label-caps text-label-caps tracking-widest uppercase text-on-background transition-all">Outdoor workout</span>
+<input class="hidden peer" type="checkbox"/>
+<div class="w-8 h-8 brutalist-border flex items-center justify-center transition-all peer-checked:bg-safety-orange peer-checked:border-safety-orange">
+<span class="material-symbols-outlined text-background hidden peer-checked:block" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+</label>
+<label class="group flex items-center justify-between min-h-[56px] border-b border-primary py-4 cursor-pointer active:bg-surface-container-high transition-colors">
+<span class="font-label-caps text-label-caps tracking-widest uppercase text-on-background transition-all">1 Gallon Water</span>
+<input class="hidden peer" type="checkbox"/>
+<div class="w-8 h-8 brutalist-border flex items-center justify-center transition-all peer-checked:bg-electric-blue peer-checked:border-electric-blue">
+<span class="material-symbols-outlined text-background hidden peer-checked:block" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+</label>
+<label class="group flex items-center justify-between min-h-[56px] border-b border-primary py-4 cursor-pointer active:bg-surface-container-high transition-colors">
+<span class="font-label-caps text-label-caps tracking-widest uppercase text-on-background transition-all">Read 10 pages</span>
+<input class="hidden peer" type="checkbox"/>
+<div class="w-8 h-8 brutalist-border flex items-center justify-center transition-all peer-checked:bg-success-green peer-checked:border-success-green">
+<span class="material-symbols-outlined text-background hidden peer-checked:block" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+</label>
+</div>
+</div>
+</section>
+<!-- Progress Photo Section -->
+<section class="flex flex-col gap-4">
+<h2 class="font-label-caps text-label-caps uppercase text-on-surface-variant">Daily Proof Photo</h2>
+<div class="relative w-full aspect-[4/5] bg-surface-gray brutalist-border flex flex-col items-center justify-center overflow-hidden group">
+<div class="flex flex-col items-center gap-4 text-center px-8">
+<span class="material-symbols-outlined text-[48px] text-on-surface-variant" style="font-variation-settings: 'wght' 200;">add_a_photo</span>
+<p class="font-label-caps text-label-caps text-on-surface-variant">NO EXCUSES. UPLOAD PROOF.</p>
+</div>
+<!-- Overlay Button -->
+<button class="absolute bottom-6 bg-primary text-background px-8 py-3 font-label-caps text-label-caps uppercase active:scale-95 transition-transform brutalist-shadow">
+                    Take Photo
+                </button>
+<img class="hidden w-full h-full object-cover" data-alt="A gritty, black and white high-contrast photography of a person training in a minimalist home gym setting. The lighting is harsh and dramatic, casting deep shadows that emphasize the raw, brutalist aesthetic of the 75 Hard challenge. The image has a textured, film-grain quality, suggesting a documentary style capture of physical discipline and mental grit." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCgc7pOy9rfTsyo9mPatV2elKLCLzPmGYV-gDgDDnht1jMMv2VNO0O5Uc2Fj0gIbFujD8NY4e-qnbKJkSLc7-tkS_RDx2IFP3Jj8YRRNxhg20p5j3-MU0lJVhJKjg0XvbS6W6xtHmDPXpoiA7re3SAqJ3EEpvUOOacwcvI_hXryeaJJHr2RvA63ASXioS3Jq1jfSnuMhXiJqV6llBNDDSTqw0KK6DfxZpKA90OXjQM6Ylpz64Zd8zgyXJvhYhD4try-Qpv5rmoGthU"/>
+</div>
+</section>
+<!-- Journal Preview Section -->
+<section class="flex flex-col gap-4">
+<div class="flex justify-between items-end">
+<h2 class="font-label-caps text-label-caps uppercase text-on-surface-variant">Journal Entry</h2>
+<button class="text-safety-orange font-label-caps text-label-caps uppercase">Edit</button>
+</div>
+<div class="bg-surface-gray p-6 brutalist-border">
+<p class="text-on-surface font-body-md italic opacity-80 leading-relaxed">
+                    "Woke up at 5:00 AM. Leg day was brutal but the outdoor walk in the rain really cleared my head. 12 days in and the discipline is starting to feel like a default setting rather than a chore..."
+                </p>
+<div class="mt-4 pt-4 border-t border-white/10 flex items-center gap-2">
+<span class="material-symbols-outlined text-[14px] text-on-surface-variant">schedule</span>
+<span class="font-label-caps text-[10px] text-on-surface-variant">TIMESTAMP: 20:42 PM</span>
+</div>
+</div>
+</section>
+<!-- Final Action -->
+<section class="pb-8">
+<button class="w-full bg-primary text-background py-6 font-headline-lg-mobile text-headline-lg-mobile font-bold uppercase active:scale-95 transition-transform brutalist-shadow">
+                Complete Day 12
+            </button>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-full z-50 flex justify-around items-stretch h-[64px] bg-background dark:bg-background border-t-2 border-primary dark:border-primary">
+<a class="flex flex-col items-center justify-center bg-primary dark:bg-primary text-on-primary dark:text-on-primary px-4 py-2 active:scale-95 transition-transform duration-75" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">check_box</span>
+<span class="font-label-caps text-label-caps">TODAY</span>
+</a>
+<a class="flex flex-col items-center justify-center text-primary dark:text-primary px-4 py-2 hover:bg-surface-container-highest dark:hover:bg-surface-container-highest active:scale-95 transition-transform duration-75" href="#">
+<span class="material-symbols-outlined">history</span>
+<span class="font-label-caps text-label-caps">TIMELINE</span>
+</a>
+<a class="flex flex-col items-center justify-center text-primary dark:text-primary px-4 py-2 hover:bg-surface-container-highest dark:hover:bg-surface-container-highest active:scale-95 transition-transform duration-75" href="#">
+<span class="material-symbols-outlined">leaderboard</span>
+<span class="font-label-caps text-label-caps">STATS</span>
+</a>
+</nav>
+<script>
+        // Simple Interaction logic
+        document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const labelText = this.parentElement.querySelector('span');
+                if (this.checked) {
+                    labelText.classList.add('checklist-item-checked');
+                } else {
+                    labelText.classList.remove('checklist-item-checked');
+                }
+                
+                // Vibrate if supported
+                if (window.navigator.vibrate) {
+                    window.navigator.vibrate(10);
+                }
+            });
+        });
+
+        // Toggle photo visibility simulation
+        const photoBtn = document.querySelector('button:contains("Take Photo")') || document.querySelectorAll('button')[2]; 
+        photoBtn.addEventListener('click', () => {
+            const container = photoBtn.parentElement;
+            const img = container.querySelector('img');
+            const placeholder = container.querySelector('div:first-child');
+            
+            img.classList.remove('hidden');
+            placeholder.classList.add('hidden');
+            photoBtn.textContent = "Change Photo";
+        });
+    </script>
+</body></html>
