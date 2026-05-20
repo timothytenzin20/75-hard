@@ -41,3 +41,19 @@ export async function previewImageUrl(file: Blob): Promise<string> {
     return URL.createObjectURL(file);
   }
 }
+
+export async function storedImageUrl(imageDataUrl?: string, imageBlob?: Blob): Promise<string | undefined> {
+  if (imageDataUrl) return imageDataUrl;
+  return imageBlob ? previewImageUrl(imageBlob) : undefined;
+}
+
+export function dataUrlToBlob(dataUrl: string): Blob {
+  const [header, base64] = dataUrl.split(",");
+  const mimeType = header.match(/data:(.*);base64/)?.[1] ?? "application/octet-stream";
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+  return new Blob([bytes], { type: mimeType });
+}

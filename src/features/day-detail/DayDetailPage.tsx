@@ -5,7 +5,7 @@ import { TASKS } from "../../domain/constants";
 import { currentDayNumber, formatShortDate } from "../../domain/dates";
 import { canCompleteDay, completedTaskCount, getDayStatus } from "../../domain/metrics";
 import type { ActiveChallengeState, DayRecord, JournalEntry, TaskCompletion } from "../../domain/types";
-import { previewImageUrl } from "../../storage/images";
+import { storedImageUrl } from "../../storage/images";
 import { clearDraftPhoto, getDayRecord, getDraftPhoto, promoteDraftPhoto, saveDraftPhoto, saveJournal, setDayStatusFromRequirements, setTask } from "../../storage/repository";
 import { RatingControl } from "../../components/common/RatingControl";
 
@@ -41,7 +41,7 @@ export function DayDetailPage({ state, onChange }: { state: ActiveChallengeState
   useEffect(() => {
     let disposed = false;
     void (async () => {
-      const url = record?.photo?.imageBlob ? await previewImageUrl(record.photo.imageBlob) : undefined;
+      const url = await storedImageUrl(record?.photo?.imageDataUrl, record?.photo?.imageBlob);
       if (disposed) {
         if (url?.startsWith("blob:")) URL.revokeObjectURL(url);
         return;
@@ -59,7 +59,8 @@ export function DayDetailPage({ state, onChange }: { state: ActiveChallengeState
     void (async () => {
       const draft = await getDraftPhoto(day.id);
       if (!draft) return;
-      const url = await previewImageUrl(draft.imageBlob);
+      const url = await storedImageUrl(draft.imageDataUrl, draft.imageBlob);
+      if (!url) return;
       if (disposed) {
         if (url.startsWith("blob:")) URL.revokeObjectURL(url);
         return;
@@ -335,7 +336,8 @@ async function selectPhoto(
   if (!file) return;
   const draft = await saveDraftPhoto(dayId, file);
   setPendingPhotoDraft(true);
-  const previewUrl = await previewImageUrl(draft.imageBlob);
+  const previewUrl = await storedImageUrl(draft.imageDataUrl, draft.imageBlob);
+  if (!previewUrl) return;
   setPendingPhotoUrl((current) => {
     if (current?.startsWith("blob:")) URL.revokeObjectURL(current);
     return previewUrl;

@@ -71,7 +71,9 @@ export interface TaskCompletion {
 export interface ProgressPhoto {
   id: string;
   challengeDayId: string;
-  imageBlob: Blob;
+  imageDataUrl?: string;
+  thumbnailDataUrl?: string;
+  imageBlob?: Blob;
   thumbnailBlob?: Blob;
   mimeType: string;
   createdAt: string;
@@ -81,7 +83,8 @@ export interface ProgressPhoto {
 export interface DraftPhoto {
   id: string;
   challengeDayId: string;
-  imageBlob: Blob;
+  imageDataUrl?: string;
+  imageBlob?: Blob;
   mimeType: string;
   createdAt: string;
   updatedAt: string;

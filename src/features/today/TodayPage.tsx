@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { TASKS } from "../../domain/constants";
 import { canCompleteDay, completedTaskCount } from "../../domain/metrics";
 import type { ActiveChallengeState, JournalEntry, TaskCompletion } from "../../domain/types";
-import { previewImageUrl } from "../../storage/images";
+import { storedImageUrl } from "../../storage/images";
 import { clearDraftPhoto, completeDay, getDraftPhoto, promoteDraftPhoto, saveDraftPhoto, saveJournal, setDayCompletionFromRequirements, setTask } from "../../storage/repository";
 import { RatingControl } from "../../components/common/RatingControl";
 
@@ -32,7 +32,7 @@ export function TodayPage({ state, onChange }: { state: ActiveChallengeState; on
   useEffect(() => {
     let disposed = false;
     void (async () => {
-      const url = today.photo?.imageBlob ? await previewImageUrl(today.photo.imageBlob) : undefined;
+      const url = await storedImageUrl(today.photo?.imageDataUrl, today.photo?.imageBlob);
       if (disposed) {
         if (url?.startsWith("blob:")) URL.revokeObjectURL(url);
         return;
@@ -49,7 +49,8 @@ export function TodayPage({ state, onChange }: { state: ActiveChallengeState; on
     void (async () => {
       const draft = await getDraftPhoto(today.day.id);
       if (!draft) return;
-      const url = await previewImageUrl(draft.imageBlob);
+      const url = await storedImageUrl(draft.imageDataUrl, draft.imageBlob);
+      if (!url) return;
       if (disposed) {
         if (url.startsWith("blob:")) URL.revokeObjectURL(url);
         return;
@@ -272,7 +273,8 @@ async function selectPhoto(
   if (!file) return;
   const draft = await saveDraftPhoto(dayId, file);
   setPendingPhotoDraft(true);
-  const previewUrl = await previewImageUrl(draft.imageBlob);
+  const previewUrl = await storedImageUrl(draft.imageDataUrl, draft.imageBlob);
+  if (!previewUrl) return;
   setPendingPhotoUrl((current) => {
     if (current?.startsWith("blob:")) URL.revokeObjectURL(current);
     return previewUrl;

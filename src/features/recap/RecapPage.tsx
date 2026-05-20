@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { statsFor } from "../../domain/metrics";
 import type { ActiveChallengeState, DayRecord } from "../../domain/types";
-import { blobUrl } from "../../storage/images";
+import { storedImageUrl } from "../../storage/images";
 import { getDayRecord, getStatsInputs } from "../../storage/repository";
 
 export function RecapPage({ state }: { state: ActiveChallengeState }) {
@@ -24,10 +24,17 @@ export function RecapPage({ state }: { state: ActiveChallengeState }) {
   }, [day, state.challenge]);
 
   useEffect(() => {
-    const url = blobUrl(record?.photo?.imageBlob);
-    setPhotoUrl(url);
+    let disposed = false;
+    void (async () => {
+      const url = await storedImageUrl(record?.photo?.imageDataUrl, record?.photo?.imageBlob);
+      if (disposed) {
+        if (url?.startsWith("blob:")) URL.revokeObjectURL(url);
+        return;
+      }
+      setPhotoUrl(url);
+    })();
     return () => {
-      if (url) URL.revokeObjectURL(url);
+      disposed = true;
     };
   }, [record?.photo]);
 

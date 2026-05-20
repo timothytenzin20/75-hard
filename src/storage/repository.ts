@@ -3,7 +3,7 @@ import { addDays, currentDayNumber, toDateKey } from "../domain/dates";
 import { DEFAULT_THEME_ID, getDefaultCustomTheme } from "../domain/themes";
 import type { ActiveChallengeState, AppSettings, Challenge, ChallengeAttempt, ChallengeDay, DayRecord, DraftPhoto, JournalEntry, ProgressPhoto, TaskCompletion, TaskKey, ThemeColors, ThemeId } from "../domain/types";
 import { db } from "./db";
-import { compressImage } from "./images";
+import { compressImage, dataUrlToBlob, fileToDataUrl } from "./images";
 
 const now = () => new Date().toISOString();
 
@@ -132,14 +132,15 @@ export async function setTask(dayId: string, taskKey: TaskKey, completed: boolea
 
 export async function savePhoto(dayId: string, file: File, options: { preserveDayStatus?: boolean } = {}): Promise<void> {
   const [imageBlob, thumbnailBlob] = await Promise.all([compressImage(file), compressImage(file, true)]);
+  const [imageDataUrl, thumbnailDataUrl] = await Promise.all([fileToDataUrl(imageBlob), fileToDataUrl(thumbnailBlob)]);
   const timestamp = now();
   const existing = await db.photos.where("challengeDayId").equals(dayId).first();
   const task = await db.tasks.where({ challengeDayId: dayId, taskKey: "progressPhoto" }).first();
   const photo: ProgressPhoto = {
     id: existing?.id ?? id("photo"),
     challengeDayId: dayId,
-    imageBlob,
-    thumbnailBlob,
+    imageDataUrl,
+    thumbnailDataUrl,
     mimeType: "image/jpeg",
     createdAt: existing?.createdAt ?? timestamp,
     updatedAt: timestamp
@@ -160,7 +161,7 @@ export async function saveDraftPhoto(dayId: string, file: File): Promise<DraftPh
   const draft: DraftPhoto = {
     id: existing?.id ?? id("draft-photo"),
     challengeDayId: dayId,
-    imageBlob: file,
+    imageDataUrl: await fileToDataUrl(file),
     mimeType: file.type || "image/jpeg",
     createdAt: existing?.createdAt ?? timestamp,
     updatedAt: timestamp
@@ -181,7 +182,9 @@ export async function clearDraftPhoto(dayId: string): Promise<void> {
 export async function promoteDraftPhoto(dayId: string, options: { preserveDayStatus?: boolean } = {}): Promise<boolean> {
   const draft = await getDraftPhoto(dayId);
   if (!draft) return false;
-  const file = new File([draft.imageBlob], `${dayId}-proof.jpg`, { type: draft.mimeType });
+  const imageBlob = draft.imageDataUrl ? dataUrlToBlob(draft.imageDataUrl) : draft.imageBlob;
+  if (!imageBlob) return false;
+  const file = new File([imageBlob], `${dayId}-proof.jpg`, { type: draft.mimeType });
   await savePhoto(dayId, file, options);
   await db.draftPhotos.delete(draft.id);
   return true;
@@ -274,7 +277,7 @@ export async function getStatsInputs(challengeId: string) {
   };
 }
 
-interface ExportedPhoto extends Omit<ProgressPhoto, "imageBlob" | "thumbnailBlob"> {
+interface ExportedPhoto extends Omit<ProgressPhoto, "imageBlob" | "thumbnailBlob" | "imageDataUrl" | "thumbnailDataUrl"> {
   imageDataUrl: string;
   thumbnailDataUrl?: string;
 }
@@ -320,8 +323,8 @@ export async function exportBackup(): Promise<Blob> {
           mimeType: photo.mimeType,
           createdAt: photo.createdAt,
           updatedAt: photo.updatedAt,
-          imageDataUrl: await blobToDataUrl(photo.imageBlob),
-          thumbnailDataUrl: photo.thumbnailBlob ? await blobToDataUrl(photo.thumbnailBlob) : undefined
+          imageDataUrl: photo.imageDataUrl ?? (photo.imageBlob ? await fileToDataUrl(photo.imageBlob) : ""),
+          thumbnailDataUrl: photo.thumbnailDataUrl ?? (photo.thumbnailBlob ? await fileToDataUrl(photo.thumbnailBlob) : undefined)
         }))
       ),
       journals,
@@ -343,8 +346,8 @@ export async function importBackup(file: File): Promise<void> {
       mimeType: photo.mimeType,
       createdAt: photo.createdAt,
       updatedAt: photo.updatedAt,
-      imageBlob: dataUrlToBlob(photo.imageDataUrl),
-      thumbnailBlob: photo.thumbnailDataUrl ? dataUrlToBlob(photo.thumbnailDataUrl) : undefined
+      imageDataUrl: photo.imageDataUrl,
+      thumbnailDataUrl: photo.thumbnailDataUrl
     }))
   );
   await db.transaction("rw", [db.settings, db.challenges, db.days, db.tasks, db.photos, db.journals, db.attempts], async () => {
@@ -384,24 +387,4 @@ async function markPastIncompleteDays(challenge: Challenge): Promise<void> {
   if (!past.length) return;
   const timestamp = now();
   await db.days.bulkPut(past.map((day) => ({ ...day, status: "missed", updatedAt: timestamp })));
-}
-
-function blobToDataUrl(blob: Blob): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(blob);
-  });
-}
-
-function dataUrlToBlob(dataUrl: string): Blob {
-  const [header, base64] = dataUrl.split(",");
-  const mimeType = header.match(/data:(.*);base64/)?.[1] ?? "application/octet-stream";
-  const binary = atob(base64);
-  const bytes = new Uint8Array(binary.length);
-  for (let index = 0; index < binary.length; index += 1) {
-    bytes[index] = binary.charCodeAt(index);
-  }
-  return new Blob([bytes], { type: mimeType });
 }
