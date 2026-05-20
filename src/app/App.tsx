@@ -29,8 +29,8 @@ export function App() {
   }, []);
 
   useEffect(() => {
-    applyTheme(settings?.theme);
-  }, [settings?.theme]);
+    applyTheme(settings?.theme, settings?.customTheme);
+  }, [settings?.theme, settings?.customTheme]);
 
   if (loading) {
     return <div className="min-h-dvh grid place-items-center label-caps text-muted">Loading local log</div>;

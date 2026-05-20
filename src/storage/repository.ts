@@ -1,7 +1,7 @@
 import { CHALLENGE_LENGTH, createTaskCompletions } from "../domain/constants";
 import { addDays, currentDayNumber, toDateKey } from "../domain/dates";
-import { DEFAULT_THEME_ID } from "../domain/themes";
-import type { ActiveChallengeState, AppSettings, Challenge, ChallengeAttempt, ChallengeDay, DayRecord, JournalEntry, ProgressPhoto, TaskCompletion, TaskKey, ThemeId } from "../domain/types";
+import { DEFAULT_THEME_ID, getDefaultCustomTheme } from "../domain/themes";
+import type { ActiveChallengeState, AppSettings, Challenge, ChallengeAttempt, ChallengeDay, DayRecord, JournalEntry, ProgressPhoto, TaskCompletion, TaskKey, ThemeColors, ThemeId } from "../domain/types";
 import { db } from "./db";
 import { compressImage } from "./images";
 
@@ -14,8 +14,8 @@ function id(prefix: string): string {
 export async function getSettings(): Promise<AppSettings> {
   const existing = await db.settings.get("settings");
   if (existing) {
-    const normalized = { ...existing, theme: existing.theme ?? DEFAULT_THEME_ID };
-    if (!existing.theme) {
+    const normalized = { ...existing, theme: existing.theme ?? DEFAULT_THEME_ID, customTheme: existing.customTheme ?? getDefaultCustomTheme() };
+    if (!existing.theme || !existing.customTheme) {
       await db.settings.put({ ...normalized, updatedAt: now() });
     }
     return normalized;
@@ -26,6 +26,7 @@ export async function getSettings(): Promise<AppSettings> {
     onboardingComplete: false,
     localStorageWarningAccepted: false,
     theme: DEFAULT_THEME_ID,
+    customTheme: getDefaultCustomTheme(),
     createdAt: timestamp,
     updatedAt: timestamp
   };
@@ -41,6 +42,11 @@ export async function acceptStorageWarning(): Promise<void> {
 export async function updateTheme(theme: ThemeId): Promise<void> {
   const settings = await getSettings();
   await db.settings.put({ ...settings, theme, updatedAt: now() });
+}
+
+export async function updateCustomTheme(customTheme: ThemeColors): Promise<void> {
+  const settings = await getSettings();
+  await db.settings.put({ ...settings, theme: "custom", customTheme, updatedAt: now() });
 }
 
 export async function getActiveChallenge(): Promise<ActiveChallengeState | undefined> {

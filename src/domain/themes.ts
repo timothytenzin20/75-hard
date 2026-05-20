@@ -1,23 +1,11 @@
-import type { ThemeId } from "./types";
+import type { ThemeColors, ThemeId } from "./types";
 
 export interface ThemeDefinition {
   id: ThemeId;
   name: string;
   subtitle: string;
   vibe: string;
-  colors: {
-    background: string;
-    surface: string;
-    surfaceStrong: string;
-    surfaceMuted: string;
-    primary: string;
-    muted: string;
-    outline: string;
-    accent: string;
-    secondary: string;
-    success: string;
-    danger: string;
-  };
+  colors: ThemeColors;
 }
 
 export const DEFAULT_THEME_ID: ThemeId = "raw-dark";
@@ -143,21 +131,26 @@ export function getTheme(themeId?: string): ThemeDefinition {
   return THEMES.find((theme) => theme.id === themeId) ?? THEMES[0];
 }
 
-export function applyTheme(themeId?: string): void {
+export function getDefaultCustomTheme(): ThemeColors {
+  return { ...getTheme("raw-dark").colors };
+}
+
+export function applyTheme(themeId?: string, customTheme?: ThemeColors): void {
   const theme = getTheme(themeId);
+  const colors = themeId === "custom" && customTheme ? customTheme : theme.colors;
   const root = document.documentElement;
-  root.dataset.theme = theme.id;
-  root.style.setProperty("--color-background", hexToRgb(theme.colors.background));
-  root.style.setProperty("--color-surface", hexToRgb(theme.colors.surface));
-  root.style.setProperty("--color-surface-strong", hexToRgb(theme.colors.surfaceStrong));
-  root.style.setProperty("--color-surface-muted", hexToRgb(theme.colors.surfaceMuted));
-  root.style.setProperty("--color-primary", hexToRgb(theme.colors.primary));
-  root.style.setProperty("--color-muted", hexToRgb(theme.colors.muted));
-  root.style.setProperty("--color-outline", hexToRgb(theme.colors.outline));
-  root.style.setProperty("--color-accent", hexToRgb(theme.colors.accent));
-  root.style.setProperty("--color-secondary", hexToRgb(theme.colors.secondary));
-  root.style.setProperty("--color-success", hexToRgb(theme.colors.success));
-  root.style.setProperty("--color-danger", hexToRgb(theme.colors.danger));
+  root.dataset.theme = themeId === "custom" ? "custom" : theme.id;
+  root.style.setProperty("--color-background", hexToRgb(colors.background));
+  root.style.setProperty("--color-surface", hexToRgb(colors.surface));
+  root.style.setProperty("--color-surface-strong", hexToRgb(colors.surfaceStrong));
+  root.style.setProperty("--color-surface-muted", hexToRgb(colors.surfaceMuted));
+  root.style.setProperty("--color-primary", hexToRgb(colors.primary));
+  root.style.setProperty("--color-muted", hexToRgb(colors.muted));
+  root.style.setProperty("--color-outline", hexToRgb(colors.outline));
+  root.style.setProperty("--color-accent", hexToRgb(colors.accent));
+  root.style.setProperty("--color-secondary", hexToRgb(colors.secondary));
+  root.style.setProperty("--color-success", hexToRgb(colors.success));
+  root.style.setProperty("--color-danger", hexToRgb(colors.danger));
 }
 
 function hexToRgb(hex: string): string {

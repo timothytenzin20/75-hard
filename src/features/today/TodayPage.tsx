@@ -1,4 +1,4 @@
-import { AlertTriangle, Camera, Check, Share2 } from "lucide-react";
+import { AlertTriangle, Camera, Check, Image, Share2 } from "lucide-react";
 import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
 import { Link } from "react-router-dom";
 import { TASKS } from "../../domain/constants";
@@ -131,10 +131,21 @@ export function TodayPage({ state, onChange }: { state: ActiveChallengeState; on
 
       <section className="space-y-3">
         <h2 className="label-caps text-muted">Daily proof photo</h2>
-        <label className="focus-ring relative flex aspect-[4/5] w-full cursor-pointer flex-col items-center justify-center overflow-hidden border-2 border-primary bg-surface">
+        <div className="relative flex aspect-[4/5] w-full flex-col items-center justify-center overflow-hidden border-2 border-primary bg-surface">
           {photoUrl ? <img alt="Today progress proof" className="h-full w-full object-cover" src={photoUrl} /> : <PhotoEmpty />}
-          <input accept="image/*" capture="environment" className="sr-only" type="file" onChange={(event) => selectPhoto(event.currentTarget.files?.[0], setPendingPhotoFile, setPendingPhotoUrl, setTasks)} />
-        </label>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <label className="focus-ring flex min-h-12 cursor-pointer items-center justify-center gap-2 border-2 border-primary px-3 label-caps text-primary">
+            <Camera size={18} />
+            Camera
+            <input accept="image/*" capture="environment" className="sr-only" type="file" onChange={(event) => void selectPhoto(event.currentTarget.files?.[0], setPendingPhotoFile, setPendingPhotoUrl, setTasks)} />
+          </label>
+          <label className="focus-ring flex min-h-12 cursor-pointer items-center justify-center gap-2 border-2 border-primary px-3 label-caps text-primary">
+            <Image size={18} />
+            Library
+            <input accept="image/*" className="sr-only" type="file" onChange={(event) => void selectPhoto(event.currentTarget.files?.[0], setPendingPhotoFile, setPendingPhotoUrl, setTasks)} />
+          </label>
+        </div>
         <p className="text-sm text-muted">Photos are stored only on this device.</p>
       </section>
 
@@ -224,7 +235,7 @@ function updateTask(taskId: string, completed: boolean, setTasks: Dispatch<SetSt
   setTasks((current) => current.map((task) => (task.id === taskId ? { ...task, completed } : task)));
 }
 
-function selectPhoto(
+async function selectPhoto(
   file: File | undefined,
   setPendingPhotoFile: Dispatch<SetStateAction<File | undefined>>,
   setPendingPhotoUrl: Dispatch<SetStateAction<string | undefined>>,
@@ -232,12 +243,22 @@ function selectPhoto(
 ) {
   if (!file) return;
   setPendingPhotoFile(file);
+  const previewUrl = await fileToDataUrl(file);
   setPendingPhotoUrl((current) => {
     if (current) URL.revokeObjectURL(current);
-    return URL.createObjectURL(file);
+    return previewUrl;
   });
   const markPhotoComplete = (current: TaskCompletion[]) => current.map((task) => (task.taskKey === "progressPhoto" ? { ...task, completed: true } : task));
   setTasks(markPhotoComplete);
+}
+
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
 }
 
 function cleanJournal(input: { text: string; moodRating?: number; energyRating?: number; difficultyRating?: number; weight: string }): Omit<JournalEntry, "id" | "challengeDayId" | "createdAt" | "updatedAt"> {

@@ -1,6 +1,20 @@
 export type ChallengeStatus = "active" | "completed" | "failed" | "archived";
 export type DayStatus = "not_started" | "in_progress" | "complete" | "missed";
-export type ThemeId = "raw-dark" | "solar-flare" | "deep-eucalyptus" | "cyber-punk" | "raw-concrete" | "dusk-violet";
+export type ThemeId = "raw-dark" | "solar-flare" | "deep-eucalyptus" | "cyber-punk" | "raw-concrete" | "dusk-violet" | "custom";
+
+export interface ThemeColors {
+  background: string;
+  surface: string;
+  surfaceStrong: string;
+  surfaceMuted: string;
+  primary: string;
+  muted: string;
+  outline: string;
+  accent: string;
+  secondary: string;
+  success: string;
+  danger: string;
+}
 
 export type TaskKey =
   | "diet"
@@ -17,6 +31,7 @@ export interface AppSettings {
   onboardingComplete: boolean;
   localStorageWarningAccepted: boolean;
   theme: ThemeId;
+  customTheme?: ThemeColors;
   createdAt: string;
   updatedAt: string;
 }

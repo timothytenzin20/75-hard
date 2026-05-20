@@ -1,16 +1,24 @@
 import { Check, RotateCcw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { applyTheme, THEMES } from "../../domain/themes";
-import type { ActiveChallengeState, AppSettings, ThemeId } from "../../domain/types";
-import { restartChallenge, updateTheme } from "../../storage/repository";
+import { applyTheme, getDefaultCustomTheme, THEMES } from "../../domain/themes";
+import type { ActiveChallengeState, AppSettings, ThemeColors, ThemeId } from "../../domain/types";
+import { restartChallenge, updateCustomTheme, updateTheme } from "../../storage/repository";
 
 export function SettingsPage({ state, settings, onChange }: { state: ActiveChallengeState; settings: AppSettings; onChange: () => Promise<void> }) {
   const navigate = useNavigate();
   const activeTheme = settings.theme;
+  const customTheme = settings.customTheme ?? getDefaultCustomTheme();
 
   const handleThemeChange = async (theme: ThemeId) => {
-    applyTheme(theme);
+    applyTheme(theme, customTheme);
     await updateTheme(theme);
+    await onChange();
+  };
+
+  const handleCustomColorChange = async (key: keyof ThemeColors, value: string) => {
+    const nextTheme = { ...customTheme, [key]: value };
+    applyTheme("custom", nextTheme);
+    await updateCustomTheme(nextTheme);
     await onChange();
   };
 
@@ -58,6 +66,35 @@ export function SettingsPage({ state, settings, onChange }: { state: ActiveChall
             </button>
           ))}
         </div>
+        <div className={`border-2 p-4 ${activeTheme === "custom" ? "border-orange bg-surface-strong" : "border-primary bg-surface"}`}>
+          <div className="mb-4 flex items-start justify-between gap-3">
+            <div>
+              <p className="font-mono text-lg font-extrabold uppercase">Custom</p>
+              <p className="label-caps text-muted">Color wheel</p>
+              <p className="mt-2 text-sm leading-6 text-muted">Tune each UI token with your device color picker.</p>
+            </div>
+            {activeTheme === "custom" ? <Check className="shrink-0 text-orange" size={22} /> : null}
+          </div>
+          <div className="grid grid-cols-1 gap-3">
+            {CUSTOM_COLOR_FIELDS.map((field) => (
+              <label key={field.key} className="flex min-h-14 items-center justify-between gap-4 border-b border-outline py-2">
+                <span>
+                  <span className="label-caps block text-primary">{field.label}</span>
+                  <span className="text-xs text-muted">{field.help}</span>
+                </span>
+                <span className="flex items-center gap-3">
+                  <span className="font-mono text-xs text-muted">{customTheme[field.key].toUpperCase()}</span>
+                  <input
+                    className="h-10 w-12 cursor-pointer border-2 border-primary bg-surface p-0"
+                    type="color"
+                    value={customTheme[field.key]}
+                    onChange={(event) => void handleCustomColorChange(field.key, event.target.value)}
+                  />
+                </span>
+              </label>
+            ))}
+          </div>
+        </div>
       </section>
       <section className="hard-card p-5 space-y-3">
         <p className="label-caps text-muted">Active challenge</p>
@@ -78,6 +115,19 @@ export function SettingsPage({ state, settings, onChange }: { state: ActiveChall
     </main>
   );
 }
+
+const CUSTOM_COLOR_FIELDS: Array<{ key: keyof ThemeColors; label: string; help: string }> = [
+  { key: "background", label: "Background", help: "Main page color" },
+  { key: "surface", label: "Surface", help: "Cards and panels" },
+  { key: "surfaceStrong", label: "Surface strong", help: "Selected panels" },
+  { key: "primary", label: "Primary", help: "Text and main borders" },
+  { key: "muted", label: "Muted", help: "Secondary text" },
+  { key: "outline", label: "Outline", help: "Subtle dividers" },
+  { key: "accent", label: "Accent", help: "Progress bars and active controls" },
+  { key: "secondary", label: "Secondary", help: "Water and alternate accents" },
+  { key: "success", label: "Success", help: "Completed ticks" },
+  { key: "danger", label: "Danger", help: "Missed or restart states" }
+];
 
 function Swatch({ color }: { color: string }) {
   return <span className="block h-7 w-4 border border-primary" style={{ backgroundColor: color }} />;
