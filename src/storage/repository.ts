@@ -185,6 +185,48 @@ export async function setDayCompletionFromRequirements(dayId: string, requiremen
   }
 }
 
+export async function setDayStatusFromRequirements(dayId: string, requirementsMet: boolean): Promise<void> {
+  const day = await db.days.get(dayId);
+  if (!day) return;
+  const challenge = await db.challenges.get(day.challengeId);
+  if (!challenge) return;
+  const timestamp = now();
+  if (requirementsMet) {
+    await db.days.update(dayId, { status: "complete", completedAt: day.completedAt ?? timestamp, updatedAt: timestamp });
+    return;
+  }
+  const todayNumber = currentDayNumber(challenge.startDate);
+  await db.days.update(dayId, {
+    status: day.dayNumber < todayNumber ? "missed" : "in_progress",
+    completedAt: undefined,
+    updatedAt: timestamp
+  });
+}
+
+export async function setChallengeCurrentDay(challengeId: string, currentDay: number): Promise<void> {
+  const challenge = await db.challenges.get(challengeId);
+  if (!challenge) return;
+  const clampedDay = Math.min(Math.max(Math.round(currentDay), 1), CHALLENGE_LENGTH);
+  const startDate = addDays(toDateKey(new Date()), -(clampedDay - 1));
+  const timestamp = now();
+  const days = await db.days.where("challengeId").equals(challengeId).toArray();
+  await db.transaction("rw", db.challenges, db.days, async () => {
+    await db.challenges.update(challengeId, {
+      startDate,
+      endDate: addDays(startDate, CHALLENGE_LENGTH - 1),
+      updatedAt: timestamp
+    });
+    await db.days.bulkPut(
+      days.map((day) => ({
+        ...day,
+        date: addDays(startDate, day.dayNumber - 1),
+        status: day.status === "complete" ? "complete" : day.dayNumber < clampedDay ? "missed" : day.dayNumber === clampedDay ? "in_progress" : "not_started",
+        updatedAt: timestamp
+      }))
+    );
+  });
+}
+
 export async function getStatsInputs(challengeId: string) {
   const [days, journals, photos] = await Promise.all([
     db.days.where("challengeId").equals(challengeId).sortBy("dayNumber"),

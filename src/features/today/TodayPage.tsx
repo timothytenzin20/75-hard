@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { TASKS } from "../../domain/constants";
 import { canCompleteDay, completedTaskCount } from "../../domain/metrics";
 import type { ActiveChallengeState, JournalEntry, TaskCompletion } from "../../domain/types";
-import { blobUrl } from "../../storage/images";
+import { previewImageUrl } from "../../storage/images";
 import { completeDay, saveJournal, savePhoto, setDayCompletionFromRequirements, setTask } from "../../storage/repository";
 import { RatingControl } from "../../components/common/RatingControl";
 
@@ -30,16 +30,23 @@ export function TodayPage({ state, onChange }: { state: ActiveChallengeState; on
   const photoUrl = pendingPhotoUrl ?? savedPhotoUrl;
 
   useEffect(() => {
-    const url = blobUrl(today.photo?.imageBlob);
-    setSavedPhotoUrl(url);
+    let disposed = false;
+    void (async () => {
+      const url = today.photo?.imageBlob ? await previewImageUrl(today.photo.imageBlob) : undefined;
+      if (disposed) {
+        if (url?.startsWith("blob:")) URL.revokeObjectURL(url);
+        return;
+      }
+      setSavedPhotoUrl(url);
+    })();
     return () => {
-      if (url) URL.revokeObjectURL(url);
+      disposed = true;
     };
   }, [today.photo]);
 
   useEffect(() => {
     return () => {
-      if (pendingPhotoUrl) URL.revokeObjectURL(pendingPhotoUrl);
+      if (pendingPhotoUrl?.startsWith("blob:")) URL.revokeObjectURL(pendingPhotoUrl);
     };
   }, [pendingPhotoUrl]);
 
@@ -243,22 +250,13 @@ async function selectPhoto(
 ) {
   if (!file) return;
   setPendingPhotoFile(file);
-  const previewUrl = await fileToDataUrl(file);
+  const previewUrl = await previewImageUrl(file);
   setPendingPhotoUrl((current) => {
-    if (current) URL.revokeObjectURL(current);
+    if (current?.startsWith("blob:")) URL.revokeObjectURL(current);
     return previewUrl;
   });
   const markPhotoComplete = (current: TaskCompletion[]) => current.map((task) => (task.taskKey === "progressPhoto" ? { ...task, completed: true } : task));
   setTasks(markPhotoComplete);
-}
-
-function fileToDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(file);
-  });
 }
 
 function cleanJournal(input: { text: string; moodRating?: number; energyRating?: number; difficultyRating?: number; weight: string }): Omit<JournalEntry, "id" | "challengeDayId" | "createdAt" | "updatedAt"> {

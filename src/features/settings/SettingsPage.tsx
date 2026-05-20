@@ -1,13 +1,19 @@
 import { Check, RotateCcw } from "lucide-react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { CHALLENGE_LENGTH } from "../../domain/constants";
+import { addDays, toDateKey } from "../../domain/dates";
 import { applyTheme, getDefaultCustomTheme, THEMES } from "../../domain/themes";
 import type { ActiveChallengeState, AppSettings, ThemeColors, ThemeId } from "../../domain/types";
-import { restartChallenge, updateCustomTheme, updateTheme } from "../../storage/repository";
+import { restartChallenge, setChallengeCurrentDay, updateCustomTheme, updateTheme } from "../../storage/repository";
 
 export function SettingsPage({ state, settings, onChange }: { state: ActiveChallengeState; settings: AppSettings; onChange: () => Promise<void> }) {
   const navigate = useNavigate();
   const activeTheme = settings.theme;
   const customTheme = settings.customTheme ?? getDefaultCustomTheme();
+  const [currentDayInput, setCurrentDayInput] = useState(state.today.day.dayNumber);
+  const previewStartDate = addDays(toDateKey(new Date()), -(Math.min(Math.max(currentDayInput, 1), CHALLENGE_LENGTH) - 1));
+  const previewEndDate = addDays(previewStartDate, CHALLENGE_LENGTH - 1);
 
   const handleThemeChange = async (theme: ThemeId) => {
     applyTheme(theme, customTheme);
@@ -85,7 +91,7 @@ export function SettingsPage({ state, settings, onChange }: { state: ActiveChall
                 <span className="flex items-center gap-3">
                   <span className="font-mono text-xs text-muted">{customTheme[field.key].toUpperCase()}</span>
                   <input
-                    className="h-10 w-12 cursor-pointer border-2 border-primary bg-surface p-0"
+                    className="square-color-input cursor-pointer border-2 border-primary bg-surface p-0"
                     type="color"
                     value={customTheme[field.key]}
                     onChange={(event) => void handleCustomColorChange(field.key, event.target.value)}
@@ -100,6 +106,44 @@ export function SettingsPage({ state, settings, onChange }: { state: ActiveChall
         <p className="label-caps text-muted">Active challenge</p>
         <p>Started {state.challenge.startDate}</p>
         <p>Ends {state.challenge.endDate}</p>
+      </section>
+      <section className="hard-card space-y-4 p-5">
+        <div>
+          <p className="label-caps text-orange">Challenge admin</p>
+          <h2 className="font-mono text-3xl font-extrabold uppercase">Backfill setup</h2>
+          <p className="mt-2 text-sm leading-6 text-muted">If you are starting the app mid-challenge, set which day you are on today. Logs stay attached to their day numbers.</p>
+        </div>
+        <label className="block">
+          <span className="label-caps text-muted">I am on day</span>
+          <input
+            className="focus-ring mt-2 w-full border-2 border-primary bg-background p-4 font-mono text-3xl font-extrabold text-primary"
+            min={1}
+            max={CHALLENGE_LENGTH}
+            type="number"
+            value={currentDayInput}
+            onChange={(event) => setCurrentDayInput(Number(event.target.value))}
+          />
+        </label>
+        <div className="grid grid-cols-2 gap-3 text-sm">
+          <div className="border border-outline p-3">
+            <p className="label-caps text-muted">Start date</p>
+            <p className="font-mono font-bold">{previewStartDate}</p>
+          </div>
+          <div className="border border-outline p-3">
+            <p className="label-caps text-muted">End date</p>
+            <p className="font-mono font-bold">{previewEndDate}</p>
+          </div>
+        </div>
+        <button
+          className="focus-ring w-full bg-primary py-4 label-caps text-background"
+          onClick={async () => {
+            await setChallengeCurrentDay(state.challenge.id, currentDayInput);
+            await onChange();
+            navigate("/today");
+          }}
+        >
+          Save challenge day
+        </button>
       </section>
       <button
         className="focus-ring flex w-full items-center justify-center gap-3 bg-danger py-5 label-caps text-primary"
