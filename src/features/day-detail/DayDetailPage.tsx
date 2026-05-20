@@ -57,7 +57,7 @@ export function DayDetailPage({ state }: { state: ActiveChallengeState; onChange
           {record.tasks.map((task) => (
             <div key={task.id} className="flex min-h-14 items-center justify-between border-b border-primary">
               <span className={task.completed ? "text-muted line-through" : "text-primary"}>{task.label}</span>
-              <span className={`label-caps ${task.completed ? "text-success" : "text-muted"}`}>{task.completed ? "Done" : "Open"}</span>
+              <span className={`label-caps ${task.completed ? "text-success" : "text-muted"}`}>{task.completed ? "Done" : "N/A"}</span>
             </div>
           ))}
         </div>
